@@ -1,0 +1,1294 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>مواعيد المكاتب للجان</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@600;800&family=IBM+Plex+Sans+Arabic:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --board:#16202B; --board2:#1E2B39; --line:#2E3F52;
+  --slip:#F4EFE3; --ink:#16202B; --muted:#8FA3B8;
+  --amber:#E9B44C; --danger:#E0685A; --green:#5FBFA0;
+  --display:'Cairo','IBM Plex Sans Arabic',system-ui,sans-serif;
+  --body:'IBM Plex Sans Arabic','Cairo',system-ui,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--board);
+  background-image:
+    radial-gradient(circle at 12% -10%, #24384B 0%, transparent 45%),
+    radial-gradient(circle at 92% 0%, #1F3040 0%, transparent 40%);
+  background-attachment:fixed;
+  color:#E6EDF4;font-family:var(--body);font-size:15px;line-height:1.55;
+  -webkit-font-smoothing:antialiased;padding-bottom:80px;
+}
+button,input,select{font-family:inherit;font-size:inherit;color:inherit}
+button{cursor:pointer;border:none;background:none}
+a{color:inherit}
+:focus-visible{outline:2px solid var(--amber);outline-offset:2px;border-radius:6px}
+.wrap{max-width:660px;margin:0 auto;padding-inline:16px}
+
+header{position:sticky;top:0;z-index:30;background:rgba(22,32,43,.92);backdrop-filter:blur(14px);border-bottom:1px solid var(--line)}
+.bar{display:flex;align-items:center;gap:8px;padding-top:12px}
+h1{font-family:var(--display);font-weight:800;font-size:18px;margin:0;letter-spacing:-.2px}
+h1 span{color:var(--amber)}
+.spacer{flex:1}
+.iconbtn{width:36px;height:36px;border-radius:11px;border:1px solid var(--line);background:var(--board2);color:var(--muted);display:grid;place-items:center;font-size:15px;transition:.15s;flex:none;position:relative}
+.iconbtn:hover{color:#fff;border-color:#44607C}
+.adminonly{display:none}
+body.admin .adminonly{display:grid}
+body.admin #btnLock{color:var(--amber);border-color:#5A4A28;background:#2A2417}
+.badge{position:absolute;top:-5px;inset-inline-start:-5px;min-width:18px;height:18px;border-radius:9px;background:var(--danger);color:#fff;font-size:11px;font-weight:700;display:grid;place-items:center;padding:0 4px;font-variant-numeric:tabular-nums}
+
+.tabs{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding-top:10px}
+.tabs::-webkit-scrollbar{display:none}
+.tab{white-space:nowrap;padding:9px 16px;border-radius:11px;border:1px solid var(--line);background:transparent;color:var(--muted);font-family:var(--display);font-weight:600;font-size:14px;transition:.15s}
+.tab:hover{color:#DCE7F2}
+.tab.on{background:var(--board2);color:#fff;border-color:#44607C;box-shadow:inset 0 -3px 0 var(--amber)}
+.tab.add{border-style:dashed;color:#5E7A96}
+
+.nav{display:flex;align-items:center;gap:8px;padding-top:12px}
+.arrow{width:32px;height:32px;border-radius:9px;border:1px solid var(--line);background:var(--board2);color:var(--muted);display:grid;place-items:center;font-size:15px;flex:none}
+.arrow:hover{color:#fff}
+.monthlbl{flex:1;text-align:center;font-family:var(--display);font-weight:600;font-size:14px;color:#B7C7D6}
+.today{font-size:12.5px;color:var(--amber);border:1px solid #5A4A28;border-radius:9px;padding:6px 12px;background:#2A2417;flex:none}
+
+.rail{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding:12px 0 14px}
+.rail::-webkit-scrollbar{display:none}
+.pill{flex:none;min-width:64px;padding:9px 6px 10px;border-radius:13px;border:1px solid var(--line);background:var(--board2);text-align:center;transition:.15s;position:relative}
+.pill .dn{display:block;font-size:11.5px;color:#7E96AC;font-weight:500}
+.pill .dd{display:block;font-family:var(--display);font-weight:800;font-size:18px;line-height:1.25;font-variant-numeric:tabular-nums}
+.pill:hover{border-color:#44607C}
+.pill.on{background:var(--amber);border-color:var(--amber);color:#1B1405}
+.pill.on .dn{color:#6B5312}
+.pill.now::after{content:'';position:absolute;bottom:5px;inset-inline:0;margin:auto;width:5px;height:5px;border-radius:50%;background:var(--amber)}
+.pill.on.now::after{background:#1B1405}
+.pill.shut{opacity:.5}
+.pill.past{opacity:.42}
+.pill.past .dd{text-decoration:line-through;text-decoration-thickness:2px}
+.slot.past{opacity:.6;border-style:solid;border-color:#22303F}
+.slot.past .slot-t{text-decoration:line-through}
+.pill .wait{position:absolute;top:-4px;inset-inline-start:-4px;min-width:16px;height:16px;border-radius:8px;background:var(--danger);color:#fff;font-size:10px;font-weight:700;display:grid;place-items:center;padding:0 3px}
+
+main{padding-top:18px}
+.panel{background:var(--board2);border:1px solid var(--line);border-radius:16px;overflow:hidden}
+.p-head{display:flex;align-items:center;gap:10px;padding:13px 16px;border-bottom:1px dashed var(--line)}
+.p-title{font-family:var(--display);font-weight:800;font-size:16.5px}
+.p-sub{font-size:12px;color:#6E88A2;font-variant-numeric:tabular-nums}
+.p-head .count{margin-inline-start:auto;font-size:11.5px;color:#5E7A96;font-variant-numeric:tabular-nums}
+.lockday{font-size:11.5px;color:#5E7A96;border:1px solid var(--line);border-radius:7px;padding:4px 9px}
+.lockday:hover{color:var(--amber);border-color:var(--amber)}
+.p-body{padding:12px;display:flex;flex-direction:column;gap:10px}
+
+/* ---- slot card ---- */
+.slot{border:1px dashed var(--line);border-radius:12px;padding:10px 12px 11px}
+.slot.has{border-style:solid}
+.slot.shut{background:#1A2531;border-style:solid;border-color:#22303F}
+.slot-h{display:flex;align-items:center;gap:9px}
+.slot-t{font-family:var(--display);font-weight:600;font-size:13.5px;font-variant-numeric:tabular-nums;color:#B7C7D6}
+.slot.shut .slot-t{color:#3F5468;text-decoration:line-through}
+.cap{margin-inline-start:auto;font-size:11.5px;color:#5E7A96;font-variant-numeric:tabular-nums;flex:none}
+.cap.full{color:var(--green)}
+.dots{display:flex;gap:3px;flex:none}
+.dots i{width:7px;height:7px;border-radius:50%;background:#33475C}
+.dots i.on{background:var(--amber)}
+
+.mini{position:relative;display:flex;align-items:center;gap:10px;width:100%;text-align:start;background:var(--slip);color:var(--ink);border-radius:9px;padding:9px 12px;padding-inline-end:18px;margin-top:8px;box-shadow:0 2px 0 rgba(0,0,0,.25)}
+.mini::after{content:'';position:absolute;inset-block:0;inset-inline-end:0;width:5px;background:var(--c,#E9B44C);border-radius:0 9px 9px 0}
+.mini .nm{font-family:var(--display);font-weight:800;font-size:14.5px;line-height:1.3}
+.mini .mt{font-size:12px;color:#5B6C7C;line-height:1.3}
+body.admin .mini{cursor:pointer}
+
+.slot-btn{width:100%;margin-top:8px;border:1px dashed var(--line);border-radius:9px;padding:9px;font-size:13px;color:#5E7A96;transition:.15s}
+.slot-btn:hover{border-color:var(--amber);color:var(--amber)}
+.slot-wait{width:100%;margin-top:8px;border:1px solid #5A4A28;background:#241E12;color:var(--amber);border-radius:9px;padding:9px;font-size:12.5px;font-weight:600}
+.slot-note{margin-top:8px;font-size:12.5px;color:#4E6880;text-align:center}
+
+.noslots{text-align:center;padding:44px 20px;border:1px dashed var(--line);border-radius:16px;color:var(--muted)}
+.noslots b{display:block;font-family:var(--display);font-weight:800;font-size:16px;color:#E6EDF4;margin-bottom:6px}
+.noslots code{font-family:ui-monospace,monospace;font-size:12.5px;color:var(--amber)}
+.errline{margin-top:12px;padding:9px 11px;border-radius:9px;background:var(--board);border:1px solid var(--line);font-family:ui-monospace,monospace;font-size:11.5px;color:#7E96AC;line-height:1.7;word-break:break-word;direction:ltr;text-align:left}
+.hint{font-size:12px;color:#5E7A96;text-align:center;margin:22px 0 0;line-height:1.8}
+
+.veil{position:fixed;inset:0;z-index:60;background:rgba(8,13,19,.72);backdrop-filter:blur(3px);display:none;align-items:flex-end;justify-content:center}
+@media(min-width:640px){.veil{align-items:center}}
+.veil.on{display:flex}
+#veil2{z-index:90}
+#sheet2{max-width:380px}
+.sheet{background:#22303F;border:1px solid var(--line);border-radius:18px 18px 0 0;width:100%;max-width:470px;padding:20px 18px 24px;max-height:92vh;overflow:auto;animation:up .22s ease}
+@media(min-width:640px){.sheet{border-radius:18px}}
+@keyframes up{from{transform:translateY(22px);opacity:0}to{transform:none;opacity:1}}
+@media(prefers-reduced-motion:reduce){.sheet{animation:none}.slot-btn{transition:none}}
+.sheet h2{font-family:var(--display);font-weight:800;font-size:17px;margin:0 0 4px}
+.sheet .sub{font-size:12.5px;color:var(--muted);margin:0 0 16px}
+label{display:block;font-size:12.5px;color:var(--muted);margin:0 0 6px;font-weight:500}
+.field{margin-bottom:13px}
+.inp{width:100%;background:var(--board);border:1px solid var(--line);border-radius:10px;padding:11px 13px;color:#E6EDF4}
+.inp::placeholder{color:#556F88}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.acts{display:flex;gap:10px;margin-top:18px}
+.btn{flex:1;padding:12px;border-radius:11px;font-family:var(--display);font-weight:600;font-size:14.5px;transition:.15s;text-align:center}
+.btn.primary{background:var(--amber);color:#1B1405}
+.btn.primary:hover{background:#F2C464}
+.btn.ok{background:var(--green);color:#0C2A22}
+.btn.ok:hover{background:#77D0B3}
+.btn.ghost{background:var(--board);border:1px solid var(--line);color:var(--muted)}
+.btn.ghost:hover{color:#fff}
+.btn.del{background:transparent;border:1px solid #633A34;color:var(--danger)}
+.btn.del:hover{background:#3A2320}
+.btn.wide{width:100%;margin-top:10px}
+.btn.sm{padding:9px;font-size:13.5px}
+
+.pick{display:flex;flex-direction:column;gap:7px;margin-bottom:6px;max-height:26vh;overflow:auto}
+.pick button{display:flex;align-items:center;gap:10px;padding:10px 13px;border-radius:10px;background:var(--board);border:1px solid var(--line);text-align:start;transition:.15s}
+.pick button:hover{border-color:#44607C}
+.pick button.sel{border-color:var(--amber);background:#241E12;color:var(--amber);font-weight:600}
+.pick .dot{width:11px;height:11px;border-radius:50%;flex:none}
+
+.req{border:1px solid var(--line);border-radius:12px;padding:12px 13px;margin-bottom:10px;background:var(--board)}
+.req .rh{display:flex;align-items:center;gap:8px;margin-bottom:4px}
+.req .rc{font-family:var(--display);font-weight:800;font-size:15px}
+.req .rw{font-size:11.5px;color:#6E88A2;margin-inline-start:auto;font-variant-numeric:tabular-nums}
+.req .rd{font-size:12.5px;color:#9FB3C6;line-height:1.6}
+.req .rd a{color:var(--amber);text-decoration:none}
+.req .rn{font-size:12.5px;color:#7E96AC;margin-top:5px;padding-inline-start:9px;border-inline-start:2px solid var(--line)}
+.req .inp{margin-top:9px;padding:9px 11px;font-size:13.5px}
+.req .acts{margin-top:9px;gap:8px}
+.st{font-size:11px;font-weight:700;border-radius:6px;padding:2px 8px;flex:none}
+.st.ok{background:#17352C;color:var(--green)}
+.st.no{background:#3A2320;color:var(--danger)}
+.st.wait{background:#2A2417;color:var(--amber)}
+
+.crow{display:flex;align-items:center;gap:9px;padding:8px 0;border-bottom:1px solid var(--line)}
+.crow .dot{width:12px;height:12px;border-radius:50%;flex:none}
+.crow .nm{flex:1;font-weight:500;font-size:14px}
+.crow .n{font-size:11.5px;color:#5E7A96}
+.crow button{color:#5E7A96;font-size:12.5px;padding:4px 5px}
+.crow button:hover{color:var(--danger)}
+.crow .tm{font-family:var(--display);font-weight:600;font-size:13.5px;font-variant-numeric:tabular-nums;flex:1}
+.crow .capin{width:56px;background:var(--board);border:1px solid var(--line);border-radius:8px;padding:6px 8px;text-align:center;font-size:13px}
+.crow .caplbl{font-size:11.5px;color:#5E7A96}
+.crow .ord{display:flex;flex-direction:column;gap:2px;flex:none}
+.crow .ord button{width:22px;height:15px;border:1px solid var(--line);border-radius:5px;color:#5E7A96;font-size:9px;display:grid;place-items:center;padding:0;line-height:1}
+.crow .ord button:hover:not(:disabled){color:var(--amber);border-color:var(--amber)}
+.crow .ord button:disabled{opacity:.25;cursor:default}
+.crow .dotbtn{width:15px;height:15px;border-radius:50%;flex:none;padding:0;border:2px solid transparent}
+.crow .dotbtn:hover{border-color:#fff}
+.crow .nmin{flex:1;min-width:0;background:transparent;border:1px solid transparent;border-radius:8px;padding:7px 9px;font-size:14px;font-weight:500;color:#E6EDF4}
+.crow .nmin:hover{border-color:var(--line)}
+.crow .nmin:focus{background:var(--board);border-color:#44607C;outline:none}
+.crow .del{color:#5E7A96;font-size:15px;padding:4px 7px;flex:none}
+.crow .del:hover{color:var(--danger)}
+.addline{display:flex;gap:8px;margin-top:14px}
+.addline .inp{flex:1}
+.addline .btn{flex:0 0 auto;padding-inline:16px}
+.dayset{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:6px}
+.dayset button{padding:7px 12px;border-radius:9px;border:1px solid var(--line);background:var(--board);color:var(--muted);font-size:13px}
+.dayset button.on{background:var(--amber);border-color:var(--amber);color:#1B1405;font-weight:600}
+.segs{display:flex;gap:7px;margin-bottom:14px}
+.segs button{flex:1;padding:8px;border-radius:9px;border:1px solid var(--line);background:var(--board);color:var(--muted);font-size:13.5px}
+.segs button.on{background:var(--board2);color:#fff;border-color:#44607C}
+
+#toast{position:fixed;bottom:22px;inset-inline:0;margin:auto;width:max-content;max-width:88vw;background:#F4EFE3;color:#16202B;font-weight:600;font-size:13.5px;padding:10px 18px;border-radius:99px;z-index:80;box-shadow:0 10px 30px -8px rgba(0,0,0,.7);opacity:0;transform:translateY(8px);transition:.2s;pointer-events:none}
+#toast.on{opacity:1;transform:none}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <div class="bar">
+      <h1>مواعيد المكاتب <span>للجان</span></h1>
+      <div class="spacer"></div>
+      <button class="iconbtn adminonly" id="btnInbox" title="الطلبات">✉</button>
+      <button class="iconbtn adminonly" id="btnSlots" title="المواعيد والأيام">◷</button>
+      <button class="iconbtn adminonly" id="btnCommittees" title="اللجان">◍</button>
+      <button class="iconbtn adminonly" id="btnExport" title="حفظ نسخة">↓</button>
+      <button class="iconbtn adminonly" id="btnImport" title="استرجاع نسخة">↑</button>
+      <button class="iconbtn" id="btnLock" title="وضع المشرف">⌾</button>
+      <input type="file" id="fileIn" accept="application/json" hidden>
+    </div>
+    <div class="tabs" id="tabs"></div>
+    <div class="nav">
+      <button class="arrow" id="prevW" title="الأسبوع اللي فات">›</button>
+      <span class="monthlbl" id="monthLbl"></span>
+      <button class="arrow" id="nextW" title="الأسبوع الجاي">‹</button>
+      <button class="today" id="thisW">النهاردة</button>
+    </div>
+    <div class="rail" id="rail"></div>
+  </div>
+</header>
+
+<main class="wrap">
+  <div id="day"></div>
+  <p class="hint">الطلب بيوصل للمسؤول، وأول ما يتقبل اللجنة بتاخد مكانها في الشفت.</p>
+</main>
+
+<div class="veil" id="veil"><div class="sheet" id="sheet"></div></div>
+<div class="veil" id="veil2"><div class="sheet" id="sheet2"></div></div>
+<div id="toast"></div>
+
+<script>
+
+/* ══════════════════════════════════════════════════════════════
+   ①  حطّ بيانات Supabase بتاعتك هنا — وهنا بس
+   ──────────────────────────────────────────────────────────────
+   Supabase → Project Settings → API Keys
+     • Project URL   →  SUPABASE_URL
+     • المفتاح العام →  SUPABASE_KEY
+        - المشاريع الجديدة:  sb_publishable_xxxxxxxx
+        - المشاريع القديمة:  anon / public  (بيبدأ بـ eyJ…)
+   الاتنين شغّالين. متحطّش المفتاح السري (secret / service_role) أبدًا.
+   ══════════════════════════════════════════════════════════════ */
+
+const SUPABASE_URL = 'https://igvbgwgkpaandwnllooi.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_JQ-L5w6A2wVHVdyPUQsqgw_fWXNHThe';
+
+/* ══════════════════════════════════════════════════════════════ */
+
+const PALETTE=['#E9B44C','#5FBFA0','#7FA9E8','#D98CA8','#B79BE0','#E08A5B','#84C36B','#6FC7D4'];
+const DAYNAMES={0:'الأحد',1:'الاثنين',2:'الثلاثاء',3:'الأربعاء',4:'الخميس',5:'الجمعة',6:'السبت'};
+const DAYORDER=[6,0,1,2,3,4,5];
+let S=null, admin=false, weekStart=null, selected=null;
+const $=s=>document.querySelector(s);
+
+/* معرّفات UUID عشان تتقبل من قاعدة البيانات */
+const uid=()=>(crypto.randomUUID?crypto.randomUUID():
+  'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,c=>{
+    const r=Math.random()*16|0, v=c==='x'?r:(r&0x3|0x8);return v.toString(16);
+  }));
+
+/* ---------- dates ---------- */
+function iso(d){return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`}
+function addDays(d,n){const x=new Date(d);x.setDate(x.getDate()+n);return x}
+function satOf(d){const x=new Date(d);x.setHours(0,0,0,0);x.setDate(x.getDate()-((x.getDay()+1)%7));return x}
+const numFmt=new Intl.DateTimeFormat('ar-EG-u-nu-latn',{day:'numeric'});
+const monFmt=new Intl.DateTimeFormat('ar-EG-u-nu-latn',{month:'long',year:'numeric'});
+const fullFmt=new Intl.DateTimeFormat('ar-EG-u-nu-latn',{day:'numeric',month:'long'});
+const todayISO=iso(new Date());
+function dateOf(ds){return new Date(ds+'T00:00:00')}
+function ago(ts){
+  const m=Math.round((Date.now()-ts)/60000);
+  if(m<1)return'دلوقتي'; if(m<60)return`من ${m} دقيقة`;
+  const h=Math.round(m/60); if(h<24)return`من ${h} ساعة`;
+  return `من ${Math.round(h/24)} يوم`;
+}
+
+
+/* ---------- Supabase ---------- */
+let token=null, refreshToken=null;   /* جلسة المشرف — في الذاكرة بس */
+let LOADERR=null;                    /* سبب فشل التحميل، يتعرض على الشاشة */
+let server={offices:[],committees:[],slots:[],closed:[],requests:[],settings:null};
+
+const configured=()=>/^https:\/\/[a-z0-9-]+\.supabase\.(co|in)/i.test(SUPABASE_URL)
+  && !/x{4}/i.test(SUPABASE_URL)
+  && SUPABASE_KEY.length>20 && !SUPABASE_KEY.includes('ضع');
+
+/* ملاحظة مهمة:
+   المفتاح العام الجديد (sb_publishable_…) مش JWT، فمينفعش يتبعت في Authorization.
+   بيتبعت في هيدر apikey بس، والـ Authorization بيتحط بس لما يكون فيه مشرف مسجّل دخول.
+   الطريقة دي بتشتغل مع المفتاح الجديد والقديم (anon JWT) على السواء. */
+function heads(extra){
+  const h={apikey:SUPABASE_KEY,'Content-Type':'application/json',...(extra||{})};
+  if(token) h.Authorization='Bearer '+token;
+  return h;
+}
+
+async function sb(path,opts={},allowRetry=true){
+  let res;
+  try{
+    res=await fetch(SUPABASE_URL+'/rest/v1/'+path,{...opts,headers:heads(opts.headers)});
+  }catch(netErr){
+    const e=new Error(netErr.message||'الاتصال فشل');
+    e.path=path.split('?')[0];
+    throw e;
+  }
+  if(res.status===401&&token&&allowRetry&&refreshToken){
+    if(await refreshSession()) return sb(path,opts,false);
+  }
+  if(!res.ok){
+    let msg=await res.text();
+    try{ const j=JSON.parse(msg); msg=j.message||j.hint||j.error_description||msg; }catch(_){}
+    const e=new Error(msg||('خطأ '+res.status));
+    e.status=res.status; e.path=path.split('?')[0];
+    throw e;
+  }
+  if(res.status===204) return null;
+  const txt=await res.text();
+  return txt?JSON.parse(txt):null;
+}
+const sbInsert=(t,rows)=>sb(t,{method:'POST',headers:{Prefer:'return=minimal'},body:JSON.stringify(rows)});
+const sbUpdate=(t,q,row)=>sb(t+'?'+q,{method:'PATCH',headers:{Prefer:'return=minimal'},body:JSON.stringify(row)});
+const sbDelete=(t,q)=>sb(t+'?'+q,{method:'DELETE',headers:{Prefer:'return=minimal'}});
+
+/* ---------- تسجيل دخول المشرف ---------- */
+async function signIn(email,password){
+  const res=await fetch(SUPABASE_URL+'/auth/v1/token?grant_type=password',{
+    method:'POST',
+    headers:{apikey:SUPABASE_KEY,'Content-Type':'application/json'},
+    body:JSON.stringify({email,password})
+  });
+  const j=await res.json().catch(()=>({}));
+  if(!res.ok){
+    const code=j.error_code||j.error||'';
+    if(code==='email_not_confirmed') throw new Error('الإيميل مش متأكد — فعّله من Supabase → Authentication → Users');
+    if(code==='invalid_credentials'||res.status===400) throw new Error('الإيميل أو كلمة السر غلط');
+    throw new Error(j.error_description||j.msg||j.message||('الدخول مرفوض ('+res.status+')'));
+  }
+  token=j.access_token; refreshToken=j.refresh_token;
+}
+async function refreshSession(){
+  try{
+    const res=await fetch(SUPABASE_URL+'/auth/v1/token?grant_type=refresh_token',{
+      method:'POST',
+      headers:{apikey:SUPABASE_KEY,'Content-Type':'application/json'},
+      body:JSON.stringify({refresh_token:refreshToken})
+    });
+    if(!res.ok) throw 0;
+    const j=await res.json();
+    token=j.access_token; refreshToken=j.refresh_token;
+    return true;
+  }catch(_){
+    token=null; refreshToken=null; admin=false;
+    document.body.classList.remove('admin');
+    toast('الجلسة انتهت — ادخل تاني');
+    return false;
+  }
+}
+async function setAdmin(on){
+  admin=on;
+  if(!on) token=null;
+  document.body.classList.toggle('admin',admin);
+  await load();
+  render();
+}
+
+/* ---------- تحويل بين شكل القاعدة وشكل التطبيق ---------- */
+const rowToSlot=r=>({id:r.id,from:String(r.start_time).slice(0,5),
+  to:r.end_time?String(r.end_time).slice(0,5):'',cap:r.cap});
+const slotToRow=s=>({id:s.id,start_time:s.from,end_time:s.to||null,cap:s.cap||3});
+const rowToReq=r=>({id:r.id,officeId:r.office_id,date:r.day,slotId:r.slot_id,
+  committeeId:r.committee_id,person:r.person||'',phone:r.phone||'',people:r.people,
+  note:r.note||'',status:r.status,adminNote:r.admin_note||'',
+  at:r.created_at?new Date(r.created_at).getTime():Date.now()});
+const reqToRow=r=>({id:r.id,office_id:r.officeId,day:r.date,slot_id:r.slotId,
+  committee_id:r.committeeId,person:r.person||'',phone:r.phone||'',people:r.people,
+  note:r.note||'',status:r.status,admin_note:r.adminNote||''});
+
+/* ---------- القراءة من Supabase ---------- */
+async function load(){
+  if(!configured()){ S=blank(); LOADERR={kind:'config'}; goToday(); return; }
+  try{
+    const [offices,committees,slots,settings,closed,requests]=await Promise.all([
+      sb('offices?select=*&order=sort_order'),
+      sb('committees?select=*&order=sort_order'),
+      sb('slots?select=*&order=start_time'),
+      sb('settings?select=*&limit=1'),
+      sb('closed_slots?select=*'),
+      admin ? sb('requests?select=*&order=created_at')
+            : sb('public_schedule?select=*')
+    ]);
+    server={offices,committees,slots,closed,requests,settings:settings[0]||null};
+    const st=settings[0]||{workdays:[6,1,2,3,4],capacity:3};
+    const keep=S&&S.active;
+    S={
+      offices:offices.map(o=>({id:o.id,name:o.name})),
+      committees:committees.map(c=>({id:c.id,name:c.name,color:c.color})),
+      slots:slots.map(rowToSlot),
+      workdays:st.workdays&&st.workdays.length?st.workdays:[6,1,2,3,4],
+      capacity:st.capacity||3,
+      closed:closed.map(c=>`${c.office_id}|${c.day}|${c.slot_id}`),
+      requests:requests.map(rowToReq),
+      active:null
+    };
+    S.slots.forEach(s=>{if(!s.cap)s.cap=S.capacity});
+    S.active=(keep&&S.offices.some(o=>o.id===keep))?keep:(S.offices[0]?.id||null);
+    if(!weekStart) goToday();
+    LOADERR=(!S.offices.length&&!S.slots.length)?{kind:'empty'}:null;
+  }catch(e){
+    if(!S){ S=blank(); }
+    if(!weekStart) goToday();
+    LOADERR={kind:e.status?'api':'net',msg:e.message,status:e.status,path:e.path};
+  }
+}
+function blank(){
+  return{offices:[],committees:[],slots:[],workdays:[6,1,2,3,4],capacity:3,
+    requests:[],closed:[],active:null};
+}
+/* لوحة توضّح سبب عدم ظهور البيانات بدل ما الشاشة تفضل فاضية */
+function errorPanel(){
+  const e=LOADERR;
+  if(e.kind==='config') return `<div class="noslots">
+    <b>لسه Supabase مش متوصّل</b>
+    افتح الملف ده بمحرر نصوص، وفي أول الـ &lt;script&gt; هتلاقي سطرين:
+    <div class="errline">SUPABASE_URL<br>SUPABASE_KEY</div>
+    حطّ بياناتك مكانهم من Project Settings → API واحفظ الملف.</div>`;
+  if(e.kind==='empty') return `<div class="noslots">
+    <b>الاتصال شغّال بس الجداول فاضية</b>
+    يعني ملف <code>supabase-setup.sql</code> لسه ماتنفّذش، أو اتنفّذ من غير جزء البيانات المبدئية.
+    روح SQL Editor في Supabase والصقه كله واعمل Run.
+    <div class="acts" style="max-width:220px;margin:16px auto 0">
+      <button class="btn primary" id="e_retry">جرّب تاني</button></div></div>`;
+  if(e.kind==='net') return `<div class="noslots">
+    <b>مفيش اتصال بـ Supabase</b>
+    الرابط غلط، أو الصفحة شغالة جوه إطار بيمنع الاتصال بالخارج.
+    نزّل الملف وافتحه من جهازك أو ارفعه على استضافة.
+    <div class="errline">${esc(e.msg||'')}</div>
+    <div class="acts" style="max-width:220px;margin:16px auto 0">
+      <button class="btn primary" id="e_retry">جرّب تاني</button></div></div>`;
+  const m=(e.msg||'').toLowerCase();
+  const keyBad=e.status===401&&(m.includes('api key')||m.includes('jwt')||m.includes('invalid'));
+  const hint=keyBad
+    ? 'المفتاح غلط أو ناقص. انسخ المفتاح العام (sb_publishable_… أو anon) من Project Settings → API Keys وحطه في أول الملف.'
+    : e.status===401||e.status===403
+    ? 'الصلاحيات (RLS) مش مظبوطة — نفّذ ملف supabase-setup.sql كله تاني، خصوصًا جزء policies و grants.'
+    : e.status===404
+    ? `الجدول أو الـ view «${esc(e.path||'')}» مش موجود — نفّذ ملف الـ SQL كله.`
+    : 'راجع رسالة الخطأ تحت.';
+  return `<div class="noslots">
+    <b>Supabase ردّ بخطأ ${e.status||''}</b>
+    ${hint}
+    <div class="errline">${esc(e.path||'')} — ${esc(e.msg||'')}</div>
+    <div class="acts" style="max-width:220px;margin:16px auto 0">
+      <button class="btn primary" id="e_retry">جرّب تاني</button></div></div>`;
+}
+
+/* ---------- الحفظ في Supabase ---------- */
+/* بيقارن اللي في الشاشة باللي في القاعدة وبيبعت الفرق بس */
+let syncTimer=null, syncing=false, again=false;
+function save(){
+  clearTimeout(syncTimer);
+  syncTimer=setTimeout(sync,250);
+}
+async function sync(){
+  if(!configured()) return;
+  if(syncing){ again=true; return; }
+  syncing=true;
+  try{
+    await pushOffices();
+    await pushCommittees();
+    await pushSlots();
+    await pushSettings();
+    await pushClosed();
+    await pushRequests();
+    await load();
+    render();
+  }catch(e){
+    toast('التخزين وقع: '+e.message);
+    await load(); render();
+  }finally{
+    syncing=false;
+    if(again){ again=false; save(); }
+  }
+}
+
+async function pushOffices(){
+  if(!admin) return;
+  const add=[],upd=[];
+  S.offices.forEach((o,i)=>{
+    const old=server.offices.find(x=>x.id===o.id);
+    if(!old) add.push({id:o.id,name:o.name,sort_order:i});
+    else if(old.name!==o.name||old.sort_order!==i) upd.push({id:o.id,name:o.name,sort_order:i});
+  });
+  const del=server.offices.filter(x=>!S.offices.some(o=>o.id===x.id));
+  if(add.length) await sbInsert('offices',add);
+  for(const o of upd) await sbUpdate('offices','id=eq.'+o.id,{name:o.name,sort_order:o.sort_order});
+  for(const o of del) await sbDelete('offices','id=eq.'+o.id);
+}
+
+async function pushCommittees(){
+  if(!admin) return;
+  const add=[],upd=[];
+  S.committees.forEach((c,i)=>{
+    const old=server.committees.find(x=>x.id===c.id);
+    if(!old) add.push({id:c.id,name:c.name,color:c.color,sort_order:i});
+    else if(old.name!==c.name||old.color!==c.color||old.sort_order!==i)
+      upd.push({id:c.id,name:c.name,color:c.color,sort_order:i});
+  });
+  const del=server.committees.filter(x=>!S.committees.some(c=>c.id===x.id));
+  if(add.length) await sbInsert('committees',add);
+  for(const c of upd) await sbUpdate('committees','id=eq.'+c.id,{name:c.name,color:c.color,sort_order:c.sort_order});
+  for(const c of del) await sbDelete('committees','id=eq.'+c.id);
+}
+
+async function pushSlots(){
+  if(!admin) return;
+  const add=[],upd=[];
+  S.slots.forEach(s=>{
+    const old=server.slots.find(x=>x.id===s.id);
+    const row=slotToRow(s);
+    if(!old) add.push(row);
+    else{
+      const o=rowToSlot(old);
+      if(o.from!==s.from||o.to!==(s.to||'')||o.cap!==s.cap) upd.push(row);
+    }
+  });
+  const del=server.slots.filter(x=>!S.slots.some(s=>s.id===x.id));
+  if(add.length) await sbInsert('slots',add);
+  for(const r of upd) await sbUpdate('slots','id=eq.'+r.id,{start_time:r.start_time,end_time:r.end_time,cap:r.cap});
+  for(const s of del) await sbDelete('slots','id=eq.'+s.id);
+}
+
+async function pushSettings(){
+  if(!admin) return;
+  const old=server.settings;
+  const same=old&&old.capacity===S.capacity&&
+    JSON.stringify([...old.workdays].sort())===JSON.stringify([...S.workdays].sort());
+  if(same) return;
+  await sbUpdate('settings','id=eq.1',{workdays:S.workdays,capacity:S.capacity});
+}
+
+async function pushClosed(){
+  if(!admin) return;
+  const now=new Set(S.closed);
+  const was=new Set(server.closed.map(c=>`${c.office_id}|${c.day}|${c.slot_id}`));
+  const add=[...now].filter(k=>!was.has(k)).map(k=>{
+    const [office_id,day,slot_id]=k.split('|');return{office_id,day,slot_id};
+  });
+  const del=[...was].filter(k=>!now.has(k)).map(k=>k.split('|'));
+  if(add.length) await sbInsert('closed_slots',add);
+  for(const [o,d,s] of del)
+    await sbDelete('closed_slots',`office_id=eq.${o}&day=eq.${d}&slot_id=eq.${s}`);
+}
+
+async function pushRequests(){
+  /* اللجنة تقدر تبعت طلب جديد بس — التعديل والحذف للمشرف */
+  const add=S.requests.filter(r=>!server.requests.some(x=>x.id===r.id));
+  if(add.length){
+    await sbInsert('requests',add.map(r=>({...reqToRow(r),status:admin?r.status:'pending',
+      admin_note:admin?(r.adminNote||''):''})));
+  }
+  if(!admin) return;
+  for(const r of S.requests){
+    const old=server.requests.find(x=>x.id===r.id);
+    if(!old) continue;
+    if(old.status!==r.status||(old.admin_note||'')!==(r.adminNote||'')||(old.note||'')!==(r.note||''))
+      await sbUpdate('requests','id=eq.'+r.id,{status:r.status,admin_note:r.adminNote||'',note:r.note||''});
+  }
+  const del=server.requests.filter(x=>!S.requests.some(r=>r.id===x.id));
+  for(const r of del) await sbDelete('requests','id=eq.'+r.id);
+}
+
+/* تحديث تلقائي عشان الطلبات الجديدة تبان */
+setInterval(()=>{ if(!syncing&&document.visibilityState==='visible') load().then(render); },30000);
+document.addEventListener('visibilitychange',()=>{
+  if(document.visibilityState==='visible'&&!syncing) load().then(render);
+});
+
+function goToday(){
+  const now=new Date(); now.setHours(0,0,0,0);
+  weekStart=satOf(now);
+  const days=weekDays();
+  selected=days.find(d=>iso(d)===iso(now))||days.find(d=>d>=now)||days[0]||now;
+}
+
+/* ---------- helpers ---------- */
+const comm=id=>S.committees.find(c=>c.id===id);
+const ckey=(date,slotId)=>`${S.active}|${date}|${slotId}`;
+const isClosed=(date,slotId)=>S.closed.includes(ckey(date,slotId));
+const reqsOn=(date,slotId,st)=>S.requests.filter(r=>r.officeId===S.active&&r.date===date&&r.slotId===slotId&&(!st||r.status===st));
+const pendingAll=()=>S.requests.filter(r=>r.status==='pending');
+const capOf=s=>s.cap||S.capacity||1;
+const seatsLeft=(date,s)=>capOf(s)-reqsOn(date,s.id,'approved').length;
+function mins(t){const[h,m]=t.split(':').map(Number);return h*60+m}
+function fmt(t){if(!t)return'';let[h,m]=t.split(':').map(Number);const ap=h<12?'ص':'م';h=h%12||12;return `${h}:${String(m).padStart(2,'0')} ${ap}`}
+function slotLabel(s){return s.to?`${fmt(s.from)} – ${fmt(s.to)}`:fmt(s.from)}
+const slotById=id=>S.slots.find(s=>s.id===id);
+const officeById=id=>S.offices.find(o=>o.id===id);
+function esc(s){return String(s).replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]))}
+function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('on');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('on'),2600)}
+function sortedSlots(){return[...S.slots].sort((a,b)=>mins(a.from)-mins(b.from))}
+function weekDays(){
+  return DAYORDER.filter(g=>S.workdays.includes(g))
+    .map(g=>addDays(weekStart,DAYORDER.indexOf(g)));
+}
+function nGroups(n){return n===1?'مجموعة واحدة':n===2?'مجموعتين':`${n} مجموعات`}
+const isPastDay=ds=>ds<todayISO;
+function isPast(ds,s){
+  if(ds<todayISO)return true;
+  if(ds>todayISO)return false;
+  const now=new Date();
+  return mins(s.to||s.from)<=now.getHours()*60+now.getMinutes();
+}
+
+/* ---------- render ---------- */
+function render(){renderTabs();renderRail();renderDay();renderBadge()}
+
+function renderBadge(){
+  const b=$('#btnInbox');
+  b.querySelector('.badge')?.remove();
+  const n=pendingAll().length;
+  if(n){const s=document.createElement('span');s.className='badge';s.textContent=n;b.appendChild(s)}
+}
+
+function renderTabs(){
+  const el=$('#tabs');el.innerHTML='';
+  S.offices.forEach(o=>{
+    const b=document.createElement('button');
+    b.className='tab'+(o.id===S.active?' on':'');
+    b.textContent=o.name;
+    b.onclick=()=>{ if(o.id===S.active){ if(admin) editOffice(o); return; } S.active=o.id;save();render(); };
+    el.appendChild(b);
+  });
+  if(admin){
+    const a=document.createElement('button');
+    a.className='tab add';a.textContent='+ مكتب';a.onclick=addOffice;
+    el.appendChild(a);
+  }
+}
+
+function renderRail(){
+  $('#monthLbl').textContent=monFmt.format(weekStart);
+  const el=$('#rail');el.innerHTML='';
+  const days=weekDays();
+  if(!days.length){el.innerHTML='<span class="p-sub">مفيش أيام شغل متحددة</span>';return}
+  if(!days.some(d=>iso(d)===iso(selected))) selected=days[0];
+  const slots=sortedSlots();
+  days.forEach(d=>{
+    const ds=iso(d);
+    const open=slots.filter(s=>!isClosed(ds,s.id));
+    const wait=slots.reduce((n,s)=>n+reqsOn(ds,s.id,'pending').length,0);
+    const b=document.createElement('button');
+    b.className='pill'+(ds===iso(selected)?' on':'')+(ds===todayISO?' now':'')
+      +(isPastDay(ds)?' past':'')+(slots.length&&!open.length?' shut':'');
+    b.innerHTML=`<span class="dn">${DAYNAMES[d.getDay()]}</span><span class="dd">${numFmt.format(d)}</span>`
+      +(admin&&wait?`<span class="wait">${wait}</span>`:'');
+    b.onclick=()=>{selected=d;render()};
+    el.appendChild(b);
+  });
+}
+$('#prevW').onclick=()=>{weekStart=addDays(weekStart,-7);selected=weekDays()[0];render()};
+$('#nextW').onclick=()=>{weekStart=addDays(weekStart,7);selected=weekDays()[0];render()};
+$('#thisW').onclick=()=>{goToday();render()};
+
+function renderDay(){
+  const el=$('#day');
+  if(LOADERR){
+    el.innerHTML=errorPanel();
+    const r=$('#e_retry');
+    if(r) r.onclick=async()=>{r.textContent='لحظة…';await load();render()};
+    return;
+  }
+  const slots=sortedSlots();
+  if(!slots.length){
+    el.innerHTML=admin
+      ? `<div class="noslots"><b>حدد المواعيد الأول</b>المواعيد اللي هتحطها بتظهر في كل يوم شغل.
+         <div class="acts" style="max-width:220px;margin:16px auto 0"><button class="btn primary" id="goSlots">حدد المواعيد</button></div></div>`
+      : `<div class="noslots"><b>المواعيد لسه مانزلتش</b>المسؤول لسه بيجهّز الجدول.</div>`;
+    if(admin)$('#goSlots').onclick=openSlots;
+    return;
+  }
+  const d=selected, ds=iso(d);
+  const open=slots.filter(s=>!isClosed(ds,s.id));
+  const seats=open.reduce((a,s)=>a+capOf(s),0);
+  const used=open.reduce((a,s)=>a+reqsOn(ds,s.id,'approved').length,0);
+  el.innerHTML=`<section class="panel">
+    <div class="p-head">
+      <span class="p-title">${DAYNAMES[d.getDay()]}</span>
+      <span class="p-sub">${fullFmt.format(d)}</span>
+      <span class="count">${isPastDay(ds)?'اليوم ده عدّى':open.length?`${used} من ${seats} مكان`:'اليوم مقفول'}</span>
+    </div><div class="p-body"></div></section>`;
+  const body=el.querySelector('.p-body');
+
+  if(admin&&!isPastDay(ds)){
+    const allClosed=open.length===0;
+    const t=document.createElement('button');
+    t.className='lockday';t.textContent=allClosed?'افتح اليوم':'اقفل اليوم';
+    t.onclick=()=>{
+      if(allClosed){
+        S.closed=S.closed.filter(k=>!k.startsWith(`${S.active}|${ds}|`));
+        save();render();return;
+      }
+      const shutIt=()=>{
+        S.requests.forEach(r=>{
+          if(r.officeId===S.active&&r.date===ds&&r.status!=='rejected'){
+            r.status='rejected';r.adminNote=r.adminNote||'اليوم اتقفل';
+          }
+        });
+        slots.forEach(s=>{if(!isClosed(ds,s.id))S.closed.push(ckey(ds,s.id))});
+        save();render();
+      };
+      const n=S.requests.filter(r=>r.officeId===S.active&&r.date===ds&&r.status!=='rejected').length;
+      if(n) ask(`فيه ${n} حجز أو طلب في اليوم ده وهيترفضوا كلهم.`,shutIt,'أيوه، اقفل اليوم');
+      else shutIt();
+    };
+    el.querySelector('.p-head').appendChild(t);
+  }
+
+  slots.forEach(s=>{
+    const card=document.createElement('div');
+    const shut=isClosed(ds,s.id);
+    const ok=reqsOn(ds,s.id,'approved');
+    const wait=reqsOn(ds,s.id,'pending');
+    const cap=capOf(s), left=cap-ok.length;
+    const past=isPast(ds,s);
+    card.className='slot'+(shut?' shut':'')+(past?' past':'')+(ok.length?' has':'');
+
+    let head=`<div class="slot-h"><span class="slot-t">${slotLabel(s)}</span>`;
+    if(shut){
+      head+=`<span class="cap">مقفول</span></div>`;
+    }else if(past){
+      head+=`<span class="cap">عدّى</span></div>`;
+    }else{
+      head+=`<span class="dots">${Array.from({length:cap},(_,i)=>`<i class="${i<ok.length?'on':''}"></i>`).join('')}</span>
+        <span class="cap${left?'':' full'}">${left?`فاضل ${nGroups(left)}`:'اكتمل العدد'}</span></div>`;
+    }
+    card.innerHTML=head;
+
+    ok.forEach(r=>{
+      const c=comm(r.committeeId);
+      const m=document.createElement('button');
+      m.className='mini';m.style.setProperty('--c',c?.color||'#E9B44C');
+      m.innerHTML=`<span><span class="nm">${esc(c?.name||'—')}</span><br>
+        <span class="mt">${esc(r.person||'')}${r.people?` · ${r.people} فرد`:''}</span></span>`;
+      m.onclick=()=>openApproved(r,s,d);
+      card.appendChild(m);
+    });
+
+    if(shut){
+      if(admin){
+        const b=document.createElement('button');
+        b.className='slot-btn';b.textContent='افتح الميعاد';
+        b.onclick=()=>{S.closed=S.closed.filter(k=>k!==ckey(ds,s.id));save();render();toast('الميعاد اتفتح')};
+        card.appendChild(b);
+      }
+    }else if(past){
+      if(admin&&wait.length){
+        const b=document.createElement('button');
+        b.className='slot-wait';
+        b.textContent=`${wait.length} طلب عدّى من غير رد`;
+        b.onclick=()=>openSlotRequests(ds,s,d);
+        card.appendChild(b);
+      }
+      if(!ok.length&&!wait.length){
+        const p=document.createElement('div');
+        p.className='slot-note';p.textContent='الميعاد ده عدّى';
+        card.appendChild(p);
+      }
+    }else{
+      if(admin&&wait.length){
+        const b=document.createElement('button');
+        b.className='slot-wait';
+        b.textContent=wait.length===1?'طلب واحد مستني الرد':`${wait.length} طلبات مستنية`;
+        b.onclick=()=>openSlotRequests(ds,s,d);
+        card.appendChild(b);
+      }else if(wait.length){
+        const p=document.createElement('div');
+        p.className='slot-note';
+        p.textContent=wait.length===1?'فيه طلب مستني الرد':`فيه ${wait.length} طلبات مستنية`;
+        card.appendChild(p);
+      }
+      if(left>0){
+        const b=document.createElement('button');
+        b.className='slot-btn';b.textContent=admin?'+ ضيف لجنة':'+ اطلب مكان';
+        b.onclick=()=>openForm(d,s);
+        card.appendChild(b);
+      }else if(!ok.length){
+        const p=document.createElement('div');p.className='slot-note';p.textContent='مفيش أماكن';
+        card.appendChild(p);
+      }
+      if(admin&&!ok.length&&!wait.length){
+        const b=document.createElement('button');
+        b.className='slot-btn';b.textContent='اقفل الميعاد';
+        b.onclick=()=>{S.closed.push(ckey(ds,s.id));save();render();toast('الميعاد اتقفل')};
+        card.appendChild(b);
+      }
+    }
+    body.appendChild(card);
+  });
+}
+
+/* ---------- sheets ---------- */
+function openSheet(html,after){$('#sheet').innerHTML=html;$('#veil').classList.add('on');$('#sheet').scrollTop=0;if(after)after()}
+function closeSheet(){$('#veil').classList.remove('on')}
+$('#veil').addEventListener('click',e=>{if(e.target.id==='veil')closeSheet()});
+function ask(msg,onYes,yesLabel){
+  $('#sheet2').innerHTML=`<h2>ثواني بس</h2>
+    <p class="sub" style="margin-bottom:0">${esc(msg)}</p>
+    <div class="acts">
+      <button class="btn ghost" id="q_no">لأ، سيبه</button>
+      <button class="btn del" id="q_yes">${esc(yesLabel||'أيوه، امسح')}</button>
+    </div>`;
+  $('#veil2').classList.add('on');
+  $('#q_no').onclick=closeAsk;
+  $('#q_yes').onclick=()=>{closeAsk();onYes()};
+}
+function closeAsk(){$('#veil2').classList.remove('on')}
+$('#veil2').addEventListener('click',e=>{if(e.target.id==='veil2')closeAsk()});
+document.addEventListener('keydown',e=>{
+  if(e.key!=='Escape')return;
+  if($('#veil2').classList.contains('on'))closeAsk(); else closeSheet();
+});
+
+/* ---------- request form ---------- */
+function openForm(d,s){
+  const ds=iso(d);
+  const left=seatsLeft(ds,s), wait=reqsOn(ds,s.id,'pending').length;
+  const list=S.committees.map(c=>
+    `<button data-id="${c.id}"><span class="dot" style="background:${c.color}"></span>${esc(c.name)}</button>`).join('');
+  openSheet(`
+    <h2>${DAYNAMES[d.getDay()]} ${fullFmt.format(d)}</h2>
+    <p class="sub">${slotLabel(s)} · ${esc(officeById(S.active).name)} · فاضل ${nGroups(left)}</p>
+    ${wait?`<p class="sub" style="color:var(--amber);margin-top:-10px">فيه ${wait===1?'طلب':wait+' طلبات'} على الميعاد ده لسه مستني الرد.</p>`:''}
+    <div class="field">
+      <label>اللجنة</label>
+      <div class="pick" id="p_list">${list||'<p class="sub">المسؤول لسه ماسجّلش أسماء اللجان.</p>'}</div>
+      ${admin?'<input class="inp" id="p_new" style="margin-top:7px" placeholder="أو اكتب اسم لجنة جديدة">':''}
+    </div>
+    <div class="field"><label for="p_person">اسمك</label>
+      <input class="inp" id="p_person" placeholder="الاسم بالكامل"></div>
+    <div class="field"><label for="p_phone">رقم الموبايل</label>
+      <input class="inp" id="p_phone" type="tel" inputmode="tel" placeholder="01xxxxxxxxx"></div>
+    <div class="field"><label for="p_people">عدد الأفراد اللي هيجوا</label>
+      <input class="inp" id="p_people" type="number" min="1" placeholder="مثلاً: 12"></div>
+    <div class="field"><label for="p_note">ملاحظة (اختياري)</label>
+      <input class="inp" id="p_note" placeholder="أي حاجة تحب المسؤول يعرفها"></div>
+    <div class="acts">
+      <button class="btn ghost" id="p_cancel">إلغاء</button>
+      <button class="btn primary" id="p_send">${admin?'ضيفها على طول':'ابعت الطلب'}</button>
+    </div>`,()=>{
+    let chosen=null;
+    $('#p_list')?.querySelectorAll('button').forEach(b=>{
+      b.onclick=()=>{
+        $('#p_list').querySelectorAll('button').forEach(x=>x.classList.remove('sel'));
+        b.classList.add('sel');chosen=b.dataset.id;
+        if($('#p_new'))$('#p_new').value='';
+      };
+    });
+    if(admin&&$('#p_new'))$('#p_new').oninput=()=>{
+      $('#p_list').querySelectorAll('button').forEach(x=>x.classList.remove('sel'));chosen=null;
+    };
+    $('#p_cancel').onclick=closeSheet;
+    $('#p_send').onclick=()=>{
+      let cid=chosen;
+      if(!cid&&admin&&$('#p_new').value.trim()){
+        const n=$('#p_new').value.trim();
+        let c=S.committees.find(x=>x.name===n);
+        if(!c){c={id:uid(),name:n,color:PALETTE[S.committees.length%PALETTE.length]};S.committees.push(c)}
+        cid=c.id;
+      }
+      if(!cid){toast('اختار اسم اللجنة');return}
+      if(reqsOn(ds,s.id,'approved').some(r=>r.committeeId===cid)){toast('اللجنة دي واخدة مكان في الشفت ده');return}
+      const person=$('#p_person').value.trim();
+      if(!person){toast('اكتب اسمك');return}
+      const phone=$('#p_phone').value.replace(/\s/g,'');
+      if(phone.replace(/\D/g,'').length<8){toast('اكتب رقم موبايل صحيح');return}
+      const people=parseInt($('#p_people').value,10);
+      if(!people||people<1){toast('اكتب عدد الأفراد');return}
+      if(isPast(ds,s)){toast('الميعاد ده عدّى');closeSheet();render();return}
+      if(seatsLeft(ds,s)<1){toast('الشفت ده اكتمل عدده');closeSheet();render();return}
+      S.requests.push({
+        id:uid(),officeId:S.active,date:ds,slotId:s.id,committeeId:cid,
+        person,phone,people,note:$('#p_note').value.trim(),
+        status:admin?'approved':'pending',adminNote:'',at:Date.now()
+      });
+      if(admin) closeFullSlot(ds,s);
+      save();closeSheet();render();
+      toast(admin?'اتضافت':'طلبك اتبعت — استنى رد المسؤول');
+    };
+  });
+}
+/* when a slot fills up, decline what's still waiting on it */
+function closeFullSlot(ds,s){
+  if(seatsLeft(ds,s)>0)return;
+  S.requests.forEach(r=>{
+    if(r.status==='pending'&&r.officeId===S.active&&r.date===ds&&r.slotId===s.id){
+      r.status='rejected';r.adminNote=r.adminNote||'الشفت اكتمل عدده';
+    }
+  });
+}
+
+/* ---------- approved entry ---------- */
+function openApproved(r,s,d){
+  const c=comm(r.committeeId);
+  if(!admin){
+    openSheet(`<h2>${esc(c?.name||'')}</h2>
+      <p class="sub">${DAYNAMES[d.getDay()]} ${fullFmt.format(d)} · ${slotLabel(s)}</p>
+      <p style="margin:0 0 12px">${esc(r.person||'')} · ${r.people||'?'} فرد</p>
+      <p class="sub">المكان ده متحجز. كلّم المسؤول لو محتاج تغييره.</p>
+      <div class="acts"><button class="btn ghost" id="b_ok">تمام</button></div>`,
+      ()=>{$('#b_ok').onclick=closeSheet});
+    return;
+  }
+  openSheet(`<h2>${esc(c?.name||'')}</h2>
+    <p class="sub">${DAYNAMES[d.getDay()]} ${fullFmt.format(d)} · ${slotLabel(s)}</p>
+    <div class="req">
+      <div class="rd">${esc(r.person||'')}<br>
+        <a href="tel:${esc(r.phone||'')}">${esc(r.phone||'')}</a><br>
+        ${r.people||'?'} فرد</div>
+      ${r.note?`<div class="rn">${esc(r.note)}</div>`:''}
+    </div>
+    <div class="field"><label for="b_note">ملاحظتك</label>
+      <input class="inp" id="b_note" value="${esc(r.adminNote||'')}" placeholder="ملاحظة للجنة"></div>
+    <div class="acts">
+      <button class="btn del" id="b_del">شيل اللجنة</button>
+      <button class="btn ghost" id="b_cancel">إلغاء</button>
+      <button class="btn primary" id="b_save">احفظ</button>
+    </div>`,()=>{
+    $('#b_cancel').onclick=closeSheet;
+    $('#b_save').onclick=()=>{r.adminNote=$('#b_note').value.trim();save();closeSheet();render();toast('اتحفظ')};
+    $('#b_del').onclick=()=>{
+      r.status='rejected';r.adminNote=$('#b_note').value.trim()||'الحجز اتلغى';
+      save();closeSheet();render();toast('المكان بقى فاضي');
+    };
+  });
+}
+
+/* ---------- request cards ---------- */
+function reqCard(r){
+  const c=comm(r.committeeId), s=slotById(r.slotId), d=dateOf(r.date);
+  const stx=r.status==='approved'?'<span class="st ok">مقبول</span>'
+    :r.status==='rejected'?'<span class="st no">مرفوض</span>':'<span class="st wait">مستني</span>';
+  return `<div class="req" data-id="${r.id}">
+    <div class="rh"><span style="width:10px;height:10px;border-radius:50%;background:${c?.color||'#888'};flex:none"></span>
+      <span class="rc">${esc(c?.name||'—')}</span>${r.status!=='pending'?stx:''}
+      <span class="rw">${ago(r.at)}</span></div>
+    <div class="rd">${DAYNAMES[d.getDay()]} ${fullFmt.format(d)} · ${s?slotLabel(s):'—'} · ${esc(officeById(r.officeId)?.name||'')}<br>
+      ${esc(r.person||'')} · <a href="tel:${esc(r.phone||'')}">${esc(r.phone||'')}</a> · ${r.people||'?'} فرد</div>
+    ${r.note?`<div class="rn">${esc(r.note)}</div>`:''}
+    ${r.adminNote?`<div class="rn" style="color:var(--amber)">ردك: ${esc(r.adminNote)}</div>`:''}
+    ${r.status==='pending'?`<input class="inp" data-note placeholder="ملاحظتك (اختياري)">
+      <div class="acts"><button class="btn del sm" data-act="no">ارفض</button>
+        <button class="btn ok sm" data-act="yes">اقبل</button></div>`:''}
+  </div>`;
+}
+function wireReqCards(root,after){
+  root.querySelectorAll('.req [data-act]').forEach(btn=>{
+    btn.onclick=()=>{
+      const card=btn.closest('.req'), r=S.requests.find(x=>x.id===card.dataset.id);
+      const note=card.querySelector('[data-note]').value.trim();
+      if(btn.dataset.act==='yes'){
+        const s=slotById(r.slotId);
+        const done=S.requests.filter(x=>x.status==='approved'&&x.officeId===r.officeId&&x.date===r.date&&x.slotId===r.slotId);
+        if(done.length>=capOf(s)){toast('الشفت ده اكتمل عدده');return}
+        if(done.some(x=>x.committeeId===r.committeeId)){toast('اللجنة دي واخدة مكان في الشفت ده');return}
+        r.status='approved';r.adminNote=note;
+        if(done.length+1>=capOf(s)){
+          S.requests.forEach(o=>{
+            if(o!==r&&o.status==='pending'&&o.officeId===r.officeId&&o.date===r.date&&o.slotId===r.slotId){
+              o.status='rejected';o.adminNote=o.adminNote||'الشفت اكتمل عدده';
+            }
+          });
+        }
+        toast('اتقبل');
+      }else{
+        r.status='rejected';r.adminNote=note;toast('اترفض');
+      }
+      save();render();if(after)after();
+    };
+  });
+}
+
+function openSlotRequests(ds,s,d){
+  const wait=reqsOn(ds,s.id,'pending').sort((a,b)=>a.at-b.at);
+  const left=seatsLeft(ds,s);
+  openSheet(`<h2>${DAYNAMES[d.getDay()]} ${fullFmt.format(d)}</h2>
+    <p class="sub">${slotLabel(s)} · فاضل ${nGroups(left)} · ${wait.length===1?'طلب واحد':wait.length+' طلبات'}</p>
+    ${wait.map(r=>reqCard(r)).join('')}
+    <div class="acts"><button class="btn ghost" id="x_close">تمام</button></div>`,()=>{
+    $('#x_close').onclick=closeSheet;
+    wireReqCards($('#sheet'),()=>{ if(!reqsOn(ds,s.id,'pending').length) closeSheet(); else openSlotRequests(ds,s,d); });
+  });
+}
+
+/* ---------- inbox ---------- */
+let inboxTab='pending';
+function openInbox(){
+  const all=[...S.requests].sort((a,b)=>b.at-a.at);
+  const list=inboxTab==='pending'?all.filter(r=>r.status==='pending'):all.filter(r=>r.status!=='pending');
+  openSheet(`<h2>الطلبات</h2>
+    <p class="sub">الطلبات اللي اللجان بعتاها.</p>
+    <div class="segs">
+      <button data-t="pending" class="${inboxTab==='pending'?'on':''}">مستنية (${all.filter(r=>r.status==='pending').length})</button>
+      <button data-t="done" class="${inboxTab==='done'?'on':''}">اتردّ عليها</button>
+    </div>
+    ${list.length?list.map(r=>reqCard(r)).join(''):'<p class="sub">مفيش حاجة هنا.</p>'}
+    <div class="acts"><button class="btn ghost" id="i_close">تمام</button></div>`,()=>{
+    $('#i_close').onclick=closeSheet;
+    $('#sheet').querySelectorAll('.segs button').forEach(b=>b.onclick=()=>{inboxTab=b.dataset.t;openInbox()});
+    wireReqCards($('#sheet'),openInbox);
+  });
+}
+$('#btnInbox').onclick=openInbox;
+
+/* ---------- slots + workdays + capacity ---------- */
+function openSlots(keepDraft){
+  let draftDays=keepDraft?[...keepDraft]:[...S.workdays];
+  const sameDays=()=>JSON.stringify([...draftDays].sort((a,b)=>a-b))
+                    ===JSON.stringify([...S.workdays].sort((a,b)=>a-b));
+  const markDirty=()=>{
+    const b=$('#d_save'); if(!b) return;
+    const dirty=!sameDays();
+    b.classList.toggle('primary',dirty);
+    b.classList.toggle('ghost',!dirty);
+    b.textContent=dirty?'احفظ أيام الشغل':'أيام الشغل محفوظة';
+  };
+  const rows=sortedSlots().map(s=>`<div class="crow" data-id="${s.id}">
+      <span class="tm">${slotLabel(s)}</span>
+      <span class="caplbl">لجان</span>
+      <input class="capin" type="number" min="1" max="20" value="${capOf(s)}" data-cap>
+      <button data-act="del">حذف</button></div>`).join('');
+  const daybtns=DAYORDER.map(g=>
+    `<button data-g="${g}" class="${draftDays.includes(g)?'on':''}">${DAYNAMES[g]}</button>`).join('');
+  openSheet(`
+    <h2>المواعيد والأيام</h2>
+    <p class="sub">أيام الشغل اللي بتظهر في الشريط فوق:</p>
+    <div class="dayset">${daybtns}</div>
+    <button class="btn ghost wide" id="d_save">احفظ أيام الشغل</button>
+    <p class="sub" style="margin-top:18px">المواعيد اللي بتتكرر في كل يوم شغل، وعدد اللجان اللي المكان يشيلها في الشفت الواحد:</p>
+    ${rows||'<p class="sub">لسه مفيش مواعيد.</p>'}
+    <div class="field row2" style="margin-top:16px">
+      <div><label for="s_from">من</label><input class="inp" id="s_from" type="time"></div>
+      <div><label for="s_to">إلى</label><input class="inp" id="s_to" type="time"></div>
+    </div>
+    <div class="field"><label for="s_cap">عدد اللجان للشفت الجديد</label>
+      <input class="inp" id="s_cap" type="number" min="1" max="20" value="${S.capacity}"></div>
+    <div class="acts">
+      <button class="btn ghost" id="s_close">تمام</button>
+      <button class="btn primary" id="s_add">أضف الميعاد</button>
+    </div>`,()=>{
+    markDirty();
+    $('#s_close').onclick=closeSheet;
+    $('#s_add').onclick=()=>{
+      const f=$('#s_from').value,t=$('#s_to').value;
+      if(!f){toast('حدد بداية الميعاد');return}
+      const cap=Math.max(1,parseInt($('#s_cap').value,10)||S.capacity);
+      S.capacity=cap;
+      S.slots.push({id:uid(),from:f,to:t,cap});save();render();openSlots(draftDays);
+    };
+    $('#sheet').querySelectorAll('[data-cap]').forEach(inp=>{
+      inp.onchange=()=>{
+        const s=slotById(inp.closest('.crow').dataset.id);
+        const v=Math.max(1,parseInt(inp.value,10)||1);
+        inp.value=v;s.cap=v;save();render();
+      };
+    });
+    $('#sheet').querySelectorAll('.dayset button').forEach(b=>{
+      b.onclick=()=>{
+        const g=+b.dataset.g;
+        if(draftDays.includes(g)) draftDays=draftDays.filter(x=>x!==g);
+        else draftDays.push(g);
+        b.classList.toggle('on');
+        markDirty();
+      };
+    });
+    $('#d_save').onclick=()=>{
+      if(!draftDays.length){
+        /* التحقق فشل — الأيام المحفوظة تفضل زي ما هي */
+        toast('لازم تختار يوم واحد على الأقل');
+        return;
+      }
+      S.workdays=[...draftDays];
+      save();render();
+      markDirty();
+      toast('أيام الشغل اتحفظت');
+    };
+    $('#sheet').querySelectorAll('.crow [data-act]').forEach(btn=>{
+      btn.onclick=()=>{
+        const id=btn.closest('.crow').dataset.id;
+        const n=S.requests.filter(r=>r.slotId===id&&r.status!=='rejected').length;
+        const go=()=>{
+          S.slots=S.slots.filter(x=>x.id!==id);
+          S.requests=S.requests.filter(r=>r.slotId!==id);
+          S.closed=S.closed.filter(k=>!k.endsWith(`|${id}`));
+          save();render();openSlots(draftDays);toast('الميعاد اتشال');
+        };
+        if(n) ask(`فيه ${n} حجز أو طلب على الميعاد ده وهيتشالوا معاه.`,go);
+        else go();
+      };
+    });
+  });
+}
+$('#btnSlots').onclick=openSlots;
+
+/* ---------- committees ---------- */
+$('#btnCommittees').onclick=openCommittees;
+function openCommittees(){
+  const last=S.committees.length-1;
+  const rows=S.committees.map((c,i)=>{
+    const n=S.requests.filter(r=>r.committeeId===c.id&&r.status==='approved').length;
+    return `<div class="crow" data-id="${c.id}">
+      <span class="ord">
+        <button data-act="up" ${i===0?'disabled':''} title="فوق">▲</button>
+        <button data-act="down" ${i===last?'disabled':''} title="تحت">▼</button>
+      </span>
+      <button class="dotbtn" data-act="color" style="background:${c.color}" title="غيّر اللون"></button>
+      <input class="nmin" data-name value="${esc(c.name)}" aria-label="اسم اللجنة">
+      <span class="n">${n}</span>
+      <button class="del" data-act="del" title="حذف">✕</button>
+    </div>`;
+  }).join('');
+  openSheet(`
+    <h2>اللجان</h2>
+    <p class="sub">الترتيب هنا هو نفس ترتيبهم قدام اللجان وهي بتختار. اضغط على الاسم علشان تصلّحه.</p>
+    ${rows||'<p class="sub">لسه مفيش لجان.</p>'}
+    <div class="addline"><input class="inp" id="c_new" placeholder="اسم لجنة جديدة">
+      <button class="btn primary" id="c_add">أضف</button></div>
+    <div class="acts"><button class="btn ghost" id="c_close">تمام</button></div>`,()=>{
+    $('#c_close').onclick=closeSheet;
+    $('#c_add').onclick=()=>{
+      const n=$('#c_new').value.trim();
+      if(!n){toast('اكتب اسم اللجنة');return}
+      if(S.committees.some(x=>x.name===n)){toast('الاسم ده موجود');return}
+      S.committees.push({id:uid(),name:n,color:PALETTE[S.committees.length%PALETTE.length]});
+      save();render();openCommittees();
+    };
+    $('#c_new').addEventListener('keydown',e=>{if(e.key==='Enter')$('#c_add').click()});
+
+    /* rename in place */
+    $('#sheet').querySelectorAll('[data-name]').forEach(inp=>{
+      const c=comm(inp.closest('.crow').dataset.id);
+      const commit=()=>{
+        const v=inp.value.trim();
+        if(!v){inp.value=c.name;toast('الاسم مينفعش يفضل فاضي');return}
+        if(S.committees.some(x=>x!==c&&x.name===v)){inp.value=c.name;toast('الاسم ده موجود');return}
+        if(v!==c.name){c.name=v;save();render();toast('الاسم اتغيّر')}
+      };
+      inp.onblur=commit;
+      inp.addEventListener('keydown',e=>{if(e.key==='Enter')inp.blur()});
+    });
+
+    /* reorder / colour / delete */
+    $('#sheet').querySelectorAll('.crow [data-act]').forEach(btn=>{
+      btn.onclick=()=>{
+        const id=btn.closest('.crow').dataset.id;
+        const i=S.committees.findIndex(x=>x.id===id), c=S.committees[i];
+        const act=btn.dataset.act;
+        if(act==='up'||act==='down'){
+          const j=act==='up'?i-1:i+1;
+          if(j<0||j>=S.committees.length)return;
+          [S.committees[i],S.committees[j]]=[S.committees[j],S.committees[i]];
+          save();render();openCommittees();
+        }else if(act==='color'){
+          c.color=PALETTE[(PALETTE.indexOf(c.color)+1)%PALETTE.length];
+          btn.style.background=c.color;save();render();
+        }else{
+          const n=S.requests.filter(r=>r.committeeId===id).length;
+          ask(`هتحذف «${c.name}»${n?` ومعاها ${n} طلب`:''}.`,()=>{
+            S.requests=S.requests.filter(r=>r.committeeId!==id);
+            S.committees=S.committees.filter(x=>x.id!==id);
+            save();render();openCommittees();toast('اتحذفت');
+          });
+        }
+      };
+    });
+  });
+}
+
+/* ---------- offices ---------- */
+function addOffice(){
+  openSheet(`<h2>مكتب جديد</h2>
+    <div class="field"><label for="o_name">اسم المكتب</label>
+      <input class="inp" id="o_name" placeholder="مثلاً: مكتب مصر الجديدة"></div>
+    <div class="acts"><button class="btn ghost" id="o_cancel">إلغاء</button>
+      <button class="btn primary" id="o_save">أضف</button></div>`,()=>{
+    $('#o_name').focus();
+    $('#o_cancel').onclick=closeSheet;
+    $('#o_save').onclick=()=>{
+      const n=$('#o_name').value.trim();
+      if(!n){toast('اكتب اسم المكتب');return}
+      const o={id:uid(),name:n};S.offices.push(o);S.active=o.id;save();closeSheet();render();
+    };
+  });
+}
+function editOffice(o){
+  openSheet(`<h2>${esc(o.name)}</h2>
+    <div class="field"><label for="o_name">اسم المكتب</label>
+      <input class="inp" id="o_name" value="${esc(o.name)}"></div>
+    <div class="acts"><button class="btn del" id="o_del">احذف</button>
+      <button class="btn ghost" id="o_cancel">إلغاء</button>
+      <button class="btn primary" id="o_save">احفظ</button></div>`,()=>{
+    $('#o_cancel').onclick=closeSheet;
+    $('#o_save').onclick=()=>{o.name=$('#o_name').value.trim()||o.name;save();closeSheet();render()};
+    $('#o_del').onclick=()=>{
+      if(S.offices.length===1){toast('لازم يفضل مكتب واحد على الأقل');return}
+      const n=S.requests.filter(r=>r.officeId===o.id).length;
+      ask(`هتحذف «${o.name}»${n?` ومعاه ${n} طلب`:''}.`,()=>{
+        S.requests=S.requests.filter(r=>r.officeId!==o.id);
+        S.closed=S.closed.filter(k=>!k.startsWith(`${o.id}|`));
+        S.offices=S.offices.filter(x=>x.id!==o.id);
+        S.active=S.offices[0].id;save();closeSheet();render();toast('المكتب اتحذف');
+      });
+    };
+  });
+}
+
+/* ---------- backup ---------- */
+$('#btnExport').onclick=()=>{
+  const blob=new Blob([JSON.stringify(S,null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download=`مواعيد-المكاتب-${todayISO}.json`;a.click();
+  URL.revokeObjectURL(a.href);toast('النسخة اتنزلت');
+};
+$('#btnImport').onclick=()=>$('#fileIn').click();
+$('#fileIn').onchange=e=>{
+  const f=e.target.files[0];if(!f)return;
+  const r=new FileReader();
+  r.onload=()=>{
+    try{
+      const d=JSON.parse(r.result);
+      if(!d.offices)throw 0;
+      ask('ده هيمسح اللي موجود دلوقتي ويحط النسخة دي مكانه.',()=>{
+        S=d;S.closed=S.closed||[];S.requests=S.requests||[];S.workdays=S.workdays||[6,1,2,3,4];
+        S.capacity=S.capacity||3;S.slots.forEach(s=>{if(!s.cap)s.cap=S.capacity});
+        S.active=S.offices[0]?.id;save();goToday();render();toast('النسخة اترجّعت');
+      },'أيوه، رجّع النسخة');
+    }catch(_){toast('الملف ده مش مظبوط')}
+  };
+  r.readAsText(f);e.target.value='';
+};
+
+
+/* ---------- admin lock ---------- */
+$('#btnLock').onclick=()=>{
+  if(admin){
+    openSheet(`<h2>وضع المشرف شغّال</h2>
+      <p class="sub">إنت اللي بتقبل الطلبات وبتحدد عدد اللجان في الشفت.</p>
+      <p class="sub">تغيير كلمة السر بيتم من Supabase → Authentication → Users.</p>
+      <div class="acts">
+        <button class="btn ghost" id="k_out">اخرج من وضع المشرف</button>
+        <button class="btn primary" id="k_done">تمام</button>
+      </div>`,()=>{
+      $('#k_done').onclick=closeSheet;
+      $('#k_out').onclick=()=>{closeSheet();setAdmin(false);toast('خرجت من وضع المشرف')};
+    });
+    return;
+  }
+  openSheet(`<h2>وضع المشرف</h2>
+    <p class="sub">الدخول ده للمسؤول بس.</p>
+    <div class="field"><label for="k_mail">الإيميل</label>
+      <input class="inp" id="k_mail" type="email" inputmode="email" autocomplete="username" placeholder="you@example.com"></div>
+    <div class="field"><label for="k_pin">كلمة السر</label>
+      <input class="inp" id="k_pin" type="password" autocomplete="current-password" placeholder="••••••••"></div>
+    <div class="acts"><button class="btn ghost" id="k_cancel">إلغاء</button>
+      <button class="btn primary" id="k_go">ادخل</button></div>`,()=>{
+    const go=async()=>{
+      const mail=$('#k_mail').value.trim(), pass=$('#k_pin').value;
+      if(!mail||!pass){toast('اكتب الإيميل وكلمة السر');return}
+      $('#k_go').textContent='لحظة…';
+      try{
+        await signIn(mail,pass);
+        closeSheet();
+        await setAdmin(true);
+        toast('أهلاً — وضع المشرف شغّال');
+      }catch(e){
+        $('#k_go').textContent='ادخل';
+        toast(e.message);
+      }
+    };
+    $('#k_mail').focus();
+    $('#k_pin').addEventListener('keydown',e=>{if(e.key==='Enter')go()});
+    $('#k_cancel').onclick=closeSheet;
+    $('#k_go').onclick=go;
+  });
+};
+
+(async()=>{ await load(); render(); })();
+
+</script>
+</body>
+</html>
