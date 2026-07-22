@@ -227,9 +227,9 @@ label{display:block;font-size:12.5px;color:var(--muted);margin:0 0 6px;font-weig
     </div>
     <div class="tabs" id="tabs"></div>
     <div class="nav">
-      <button class="arrow" id="prevW" title="الأسبوع اللي فات">›</button>
+      <button class="arrow" id="prevM" title="الشهر اللي فات">‹</button>
       <span class="monthlbl" id="monthLbl"></span>
-      <button class="arrow" id="nextW" title="الأسبوع الجاي">‹</button>
+      <button class="arrow" id="nextM" title="الشهر الجاي">›</button>
       <button class="today" id="thisW">النهاردة</button>
     </div>
     <div class="rail" id="rail"></div>
@@ -266,7 +266,7 @@ const SUPABASE_KEY = 'sb_publishable_JQ-L5w6A2wVHVdyPUQsqgw_fWXNHThe';
 const PALETTE=['#E9B44C','#5FBFA0','#7FA9E8','#D98CA8','#B79BE0','#E08A5B','#84C36B','#6FC7D4'];
 const DAYNAMES={0:'الأحد',1:'الاثنين',2:'الثلاثاء',3:'الأربعاء',4:'الخميس',5:'الجمعة',6:'السبت'};
 const DAYORDER=[6,0,1,2,3,4,5];
-let S=null, admin=false, weekStart=null, selected=null;
+let S=null, admin=false, railMonth=null, selected=null;
 let snapToToday=true;   /* الشريط يبدأ من النهاردة أول ما التطبيق يفتح */
 /* طلبات الزائر ده — محتاجينها لأن الـ RLS بتخفي الأسماء والأرقام عن غير المشرف */
 const myReqs=new Map();
@@ -440,11 +440,11 @@ async function load(){
     };
     S.slots.forEach(s=>{if(!s.cap)s.cap=S.capacity});
     S.active=(keep&&S.offices.some(o=>o.id===keep))?keep:(S.offices[0]?.id||null);
-    if(!weekStart) goToday();
+    if(!railMonth) goToday();
     LOADERR=(!S.offices.length&&!S.slots.length)?{kind:'empty'}:null;
   }catch(e){
     if(!S){ S=blank(); }
-    if(!weekStart) goToday();
+    if(!railMonth) goToday();
     LOADERR={kind:e.status?'api':'net',msg:e.message,status:e.status,path:e.path};
   }
 }
@@ -493,6 +493,10 @@ function errorPanel(){
 /* رسائل مفهومة بدل رسايل قاعدة البيانات */
 function dbMessage(e){
   const m=String(e&&e.message||'');
+  /* الدوال لسه ماتنفّذتش في قاعدة البيانات */
+  if(m.includes('PGRST202')||m.includes('schema cache')||
+     m.includes('Could not find the function')||(e&&e.status===404&&/rpc/.test(e.path||'')))
+    return 'دوال التعديل والإلغاء لسه مانزلتش على قاعدة البيانات — شغّل جزء «إضافات المرحلة التانية» في ملف الـ SQL';
   if(m.includes('requests_no_duplicate')||m.includes('duplicate key'))
     return 'الرقم ده حاجز للجنة دي في نفس اليوم — مينفعش حجزين';
   if(m.includes('اكتمل عدده')) return 'الشفت ده اكتمل عدده';
@@ -625,7 +629,7 @@ document.addEventListener('visibilitychange',()=>{
 
 function goToday(){
   const now=new Date(); now.setHours(0,0,0,0);
-  weekStart=satOf(now);
+  railMonth=new Date(now.getFullYear(),now.getMonth(),1);
   const days=weekDays();
   selected=days.find(d=>iso(d)===iso(now))||days.find(d=>d>=now)||days[0]||now;
 }
@@ -646,9 +650,29 @@ const officeById=id=>S.offices.find(o=>o.id===id);
 function esc(s){return String(s).replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]))}
 function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('on');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('on'),2600)}
 function sortedSlots(){return[...S.slots].sort((a,b)=>mins(a.from)-mins(b.from))}
+/* الشريط بيعرض أيام شهر واحد بس — تغيّر الشهر من فوق */
 function weekDays(){
-  return DAYORDER.filter(g=>S.workdays.includes(g))
-    .map(g=>addDays(weekStart,DAYORDER.indexOf(g)));
+  const y=railMonth.getFullYear(), m=railMonth.getMonth();
+  const out=[], d=new Date(y,m,1);
+  while(d.getMonth()===m){
+    if(S.workdays.includes(d.getDay())) out.push(new Date(d));
+    d.setDate(d.getDate()+1);
+  }
+  return out;
+}
+const isThisMonth=()=>{
+  const n=new Date();
+  return railMonth.getFullYear()===n.getFullYear()&&railMonth.getMonth()===n.getMonth();
+};
+function shiftMonth(n){
+  railMonth=new Date(railMonth.getFullYear(),railMonth.getMonth()+n,1);
+  const days=weekDays();
+  if(isThisMonth()){
+    const t=new Date(); t.setHours(0,0,0,0);
+    selected=days.find(d=>iso(d)===iso(t))||days.find(d=>d>=t)||days[0]||railMonth;
+  }else selected=days[0]||railMonth;
+  snapToToday=true;
+  render();
 }
 function nGroups(n){return n===1?'مجموعة واحدة':n===2?'مجموعتين':`${n} مجموعات`}
 const isPastDay=ds=>ds<todayISO;
@@ -686,7 +710,7 @@ function renderTabs(){
 }
 
 function renderRail(){
-  $('#monthLbl').textContent=monFmt.format(weekStart);
+  $('#monthLbl').textContent=monFmt.format(railMonth);
   const el=$('#rail');el.innerHTML='';
   const days=weekDays();
   if(!days.length){el.innerHTML='<span class="p-sub">مفيش أيام شغل متحددة</span>';return}
@@ -709,12 +733,13 @@ function renderRail(){
   if(snapToToday){ snapToToday=false; railToToday(); }
 }
 function railToToday(){
-  const el=$('#rail'), p=el&&el.querySelector('.pill.now');
+  const el=$('#rail'); if(!el) return;
+  const p=el.querySelector('.pill.now')||el.querySelector('.pill');
   if(!p) return;
   requestAnimationFrame(()=>{ try{ p.scrollIntoView({inline:'start',block:'nearest'}); }catch(_){} });
 }
-$('#prevW').onclick=()=>{weekStart=addDays(weekStart,-7);selected=weekDays()[0];render()};
-$('#nextW').onclick=()=>{weekStart=addDays(weekStart,7);selected=weekDays()[0];render()};
+$('#prevM').onclick=()=>shiftMonth(-1);
+$('#nextM').onclick=()=>shiftMonth(1);
 $('#thisW').onclick=()=>{goToday();snapToToday=true;render()};
 
 function renderDay(){
@@ -1055,9 +1080,17 @@ function openMyRequest(id,s,d){
     };
     $('#m_del').onclick=()=>ask('هتلغي طلبك.',async()=>{
       try{
-        await rpc('cancel_pending_request',{p_id:id,p_phone:m.phone});
+        await rpc('cancel_pending_request',{p_id:id,p_phone:String(m.phone||'')});
         myReqs.delete(id); closeSheet(); await load(); render(); toast('الطلب اتلغى');
-      }catch(e){ toast(dbMessage(e)); }
+      }catch(e){
+        const cur=S.requests.find(r=>r.id===id);
+        if(cur&&cur.status==='approved'){
+          toast('الطلب اتقبل خلاص — مبقاش ينفع تلغيه من هنا');
+          closeSheet(); render(); return;
+        }
+        if(!cur){ myReqs.delete(id); closeSheet(); await load(); render(); toast('الطلب مش موجود'); return; }
+        toast(dbMessage(e));
+      }
     },'أيوه، الغي');
   });
 }
@@ -1339,29 +1372,33 @@ function wireCommitteeDrag(){
   const list=$('#c_list'); if(!list) return;
   list.querySelectorAll('.grip').forEach(grip=>{
     grip.onpointerdown=e=>{
+      if(e.button!==undefined&&e.button!==0) return;
       e.preventDefault();
       const row=grip.closest('.crow'); if(!row) return;
-      try{ grip.setPointerCapture(e.pointerId); }catch(_){}
       row.classList.add('drag');
 
+      /* المتابعة على مستوى الصفحة كلها — الصباع بيسيب المقبض الصغير أول ما يتحرك */
       const move=ev=>{
+        if(ev.cancelable) ev.preventDefault();
         const y=ev.clientY;
-        for(const other of list.querySelectorAll('.crow')){
-          if(other===row) continue;
+        const others=[...list.querySelectorAll('.crow')].filter(r=>r!==row);
+        let placed=false;
+        for(const other of others){
           const r=other.getBoundingClientRect();
-          if(y>=r.top&&y<=r.bottom){
-            list.insertBefore(row, y>r.top+r.height/2 ? other.nextSibling : other);
-            break;
-          }
+          if(y < r.top + r.height/2){ list.insertBefore(row,other); placed=true; break; }
         }
+        if(!placed) list.appendChild(row);
       };
-      const done=()=>{
-        grip.onpointermove=null; grip.onpointerup=null; grip.onpointercancel=null;
+      const up=()=>{
+        document.removeEventListener('pointermove',move);
+        document.removeEventListener('pointerup',up);
+        document.removeEventListener('pointercancel',up);
         row.classList.remove('drag');
-        try{ grip.releasePointerCapture(e.pointerId); }catch(_){}
         commitCommitteeOrder();
       };
-      grip.onpointermove=move; grip.onpointerup=done; grip.onpointercancel=done;
+      document.addEventListener('pointermove',move,{passive:false});
+      document.addEventListener('pointerup',up);
+      document.addEventListener('pointercancel',up);
     };
   });
 }
