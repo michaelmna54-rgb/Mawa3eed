@@ -70,6 +70,18 @@ body.admin #btnLock{color:var(--amber);border-color:#5A4A28;background:#2A2417}
 .pill.shut{opacity:.5}
 .pill.past{opacity:.42}
 .pill.past .dd{text-decoration:line-through;text-decoration-thickness:2px}
+.pill.past{border-color:#5A2E2A;background:#2A1B19}
+.pill.past .dn{color:#B4685E}
+.pill.past .dd{color:var(--danger)}
+.pill.past.on{background:var(--amber);border-color:var(--amber)}
+.pill.past.on .dn{color:#6B5312}
+.pill.past.on .dd{color:#1B1405}
+.pill .book{position:absolute;top:-4px;inset-inline-end:-4px;min-width:16px;height:16px;border-radius:8px;background:#33475C;color:#DCE7F2;font-size:10px;font-weight:700;display:grid;place-items:center;padding:0 3px;font-variant-numeric:tabular-nums}
+.pick button.gone{display:none}
+.crow .grip{flex:none;width:26px;height:30px;display:grid;place-items:center;color:#5E7A96;font-size:12px;line-height:1;cursor:grab;touch-action:none;user-select:none;border-radius:7px}
+.crow .grip:hover{color:var(--amber);background:var(--board)}
+.crow.drag{opacity:.92;background:#1A2836;border-radius:9px;box-shadow:0 10px 24px -10px rgba(0,0,0,.85);border-bottom-color:transparent}
+.crow.drag .grip{cursor:grabbing;color:var(--amber)}
 .slot.past{opacity:.6;border-style:solid;border-color:#22303F}
 .slot.past .slot-t{text-decoration:line-through}
 .pill .wait{position:absolute;top:-4px;inset-inline-start:-4px;min-width:16px;height:16px;border-radius:8px;background:var(--danger);color:#fff;font-size:10px;font-weight:700;display:grid;place-items:center;padding:0 3px}
@@ -254,6 +266,10 @@ const PALETTE=['#E9B44C','#5FBFA0','#7FA9E8','#D98CA8','#B79BE0','#E08A5B','#84C
 const DAYNAMES={0:'الأحد',1:'الاثنين',2:'الثلاثاء',3:'الأربعاء',4:'الخميس',5:'الجمعة',6:'السبت'};
 const DAYORDER=[6,0,1,2,3,4,5];
 let S=null, admin=false, weekStart=null, selected=null;
+let snapToToday=true;   /* الشريط يبدأ من النهاردة أول ما التطبيق يفتح */
+/* طلبات الزائر ده — محتاجينها لأن الـ RLS بتخفي الأسماء والأرقام عن غير المشرف */
+const myReqs=new Map();
+const rpc=(fn,args)=>sb('rpc/'+fn,{method:'POST',body:JSON.stringify(args)});
 const $=s=>document.querySelector(s);
 
 /* معرّفات UUID عشان تتقبل من قاعدة البيانات */
@@ -473,6 +489,17 @@ function errorPanel(){
       <button class="btn primary" id="e_retry">جرّب تاني</button></div></div>`;
 }
 
+/* رسائل مفهومة بدل رسايل قاعدة البيانات */
+function dbMessage(e){
+  const m=String(e&&e.message||'');
+  if(m.includes('requests_no_duplicate')||m.includes('duplicate key'))
+    return 'الرقم ده حاجز للجنة دي في نفس اليوم — مينفعش حجزين';
+  if(m.includes('اكتمل عدده')) return 'الشفت ده اكتمل عدده';
+  if(m.includes('اتقبل خلاص')||m.includes('not_editable'))
+    return 'الطلب اتقبل خلاص — مبقاش ينفع تعدّله';
+  return m||'حصل خطأ';
+}
+
 /* ---------- الحفظ في Supabase ---------- */
 /* بيقارن اللي في الشاشة باللي في القاعدة وبيبعت الفرق بس */
 let syncTimer=null, syncing=false, again=false;
@@ -494,7 +521,7 @@ async function sync(){
     await load();
     render();
   }catch(e){
-    toast('التخزين وقع: '+e.message);
+    toast(dbMessage(e));
     await load(); render();
   }finally{
     syncing=false;
@@ -668,18 +695,26 @@ function renderRail(){
     const ds=iso(d);
     const open=slots.filter(s=>!isClosed(ds,s.id));
     const wait=slots.reduce((n,s)=>n+reqsOn(ds,s.id,'pending').length,0);
+    const booked=slots.reduce((n,s)=>n+reqsOn(ds,s.id,'approved').length,0);
     const b=document.createElement('button');
     b.className='pill'+(ds===iso(selected)?' on':'')+(ds===todayISO?' now':'')
       +(isPastDay(ds)?' past':'')+(slots.length&&!open.length?' shut':'');
     b.innerHTML=`<span class="dn">${DAYNAMES[d.getDay()]}</span><span class="dd">${numFmt.format(d)}</span>`
-      +(admin&&wait?`<span class="wait">${wait}</span>`:'');
+      +(admin&&wait?`<span class="wait">${wait}</span>`:'')
+      +(admin&&booked?`<span class="book" title="عدد الحجوزات">${booked}</span>`:'');
     b.onclick=()=>{selected=d;render()};
     el.appendChild(b);
   });
+  if(snapToToday){ snapToToday=false; railToToday(); }
+}
+function railToToday(){
+  const el=$('#rail'), p=el&&el.querySelector('.pill.now');
+  if(!p) return;
+  requestAnimationFrame(()=>{ try{ p.scrollIntoView({inline:'start',block:'nearest'}); }catch(_){} });
 }
 $('#prevW').onclick=()=>{weekStart=addDays(weekStart,-7);selected=weekDays()[0];render()};
 $('#nextW').onclick=()=>{weekStart=addDays(weekStart,7);selected=weekDays()[0];render()};
-$('#thisW').onclick=()=>{goToday();render()};
+$('#thisW').onclick=()=>{goToday();snapToToday=true;render()};
 
 function renderDay(){
   const el=$('#day');
@@ -793,10 +828,21 @@ function renderDay(){
         b.onclick=()=>openSlotRequests(ds,s,d);
         card.appendChild(b);
       }else if(wait.length){
-        const p=document.createElement('div');
-        p.className='slot-note';
-        p.textContent=wait.length===1?'فيه طلب مستني الرد':`فيه ${wait.length} طلبات مستنية`;
-        card.appendChild(p);
+        const mine=wait.find(r=>myReqs.has(r.id));
+        if(mine){
+          const b=document.createElement('button');
+          b.className='slot-wait';
+          b.textContent='طلبك مستني الرد — اضغط للتعديل';
+          b.onclick=()=>openMyRequest(mine.id,s,d);
+          card.appendChild(b);
+        }
+        const others=wait.length-(mine?1:0);
+        if(others>0){
+          const p=document.createElement('div');
+          p.className='slot-note';
+          p.textContent=others===1?'فيه طلب تاني مستني الرد':`فيه ${others} طلبات تانية مستنية`;
+          card.appendChild(p);
+        }
       }
       if(left>0){
         const b=document.createElement('button');
@@ -845,7 +891,7 @@ function openForm(d,s){
   const ds=iso(d);
   const left=seatsLeft(ds,s), wait=reqsOn(ds,s.id,'pending').length;
   const list=S.committees.map(c=>
-    `<button data-id="${c.id}"><span class="dot" style="background:${c.color}"></span>${esc(c.name)}</button>`).join('');
+    `<button data-id="${c.id}">${admin?`<span class="dot" style="background:${c.color}"></span>`:''}${esc(c.name)}</button>`).join('');
   openSheet(`
     <h2>${DAYNAMES[d.getDay()]} ${fullFmt.format(d)}</h2>
     <p class="sub">${slotLabel(s)} · ${esc(officeById(S.active).name)} · فاضل ${nGroups(left)}</p>
@@ -854,6 +900,7 @@ function openForm(d,s){
       <label>اللجنة</label>
       <div class="pick" id="p_list">${list||'<p class="sub">المسؤول لسه ماسجّلش أسماء اللجان.</p>'}</div>
       ${admin?'<input class="inp" id="p_new" style="margin-top:7px" placeholder="أو اكتب اسم لجنة جديدة">':''}
+      ${admin?'':'<button class="btn ghost wide" id="p_change" style="display:none">غيّر اللجنة</button>'}
     </div>
     <div class="field"><label for="p_person">اسمك</label>
       <input class="inp" id="p_person" placeholder="الاسم بالكامل"></div>
@@ -873,8 +920,19 @@ function openForm(d,s){
         $('#p_list').querySelectorAll('button').forEach(x=>x.classList.remove('sel'));
         b.classList.add('sel');chosen=b.dataset.id;
         if($('#p_new'))$('#p_new').value='';
+        if(!admin){
+          /* بعد الاختيار تفضل لجنة واحدة قدام العين بس */
+          $('#p_list').querySelectorAll('button').forEach(x=>{
+            if(x!==b) x.classList.add('gone');
+          });
+          const ch=$('#p_change'); if(ch) ch.style.display='';
+        }
       };
     });
+    if(!admin&&$('#p_change')) $('#p_change').onclick=()=>{
+      $('#p_list').querySelectorAll('button').forEach(x=>{x.classList.remove('gone');x.classList.remove('sel')});
+      chosen=null; $('#p_change').style.display='none';
+    };
     if(admin&&$('#p_new'))$('#p_new').oninput=()=>{
       $('#p_list').querySelectorAll('button').forEach(x=>x.classList.remove('sel'));chosen=null;
     };
@@ -897,11 +955,18 @@ function openForm(d,s){
       if(!people||people<1){toast('اكتب عدد الأفراد');return}
       if(isPast(ds,s)){toast('الميعاد ده عدّى');closeSheet();render();return}
       if(seatsLeft(ds,s)<1){toast('الشفت ده اكتمل عدده');closeSheet();render();return}
+      if(isDuplicate(ds,cid,phone)){
+        toast('الرقم ده حاجز للجنة دي في نفس اليوم — مينفعش حجزين');
+        return;
+      }
+      const rid=uid();
       S.requests.push({
-        id:uid(),officeId:S.active,date:ds,slotId:s.id,committeeId:cid,
+        id:rid,officeId:S.active,date:ds,slotId:s.id,committeeId:cid,
         person,phone,people,note:$('#p_note').value.trim(),
         status:admin?'approved':'pending',adminNote:'',at:Date.now()
       });
+      if(!admin) myReqs.set(rid,{id:rid,date:ds,slotId:s.id,officeId:S.active,
+        committeeId:cid,person,phone,people,note:$('#p_note').value.trim(),status:'pending'});
       if(admin) closeFullSlot(ds,s);
       save();closeSheet();render();
       toast(admin?'اتضافت':'طلبك اتبعت — استنى رد المسؤول');
@@ -909,12 +974,90 @@ function openForm(d,s){
   });
 }
 /* when a slot fills up, decline what's still waiting on it */
+/* نفس الرقم + نفس اللجنة + نفس اليوم = حجز مكرر */
+function isDuplicate(ds,committeeId,phone){
+  const norm=v=>String(v||'').replace(/\D/g,'');
+  const p=norm(phone);
+  if(!p) return false;
+  for(const m of myReqs.values())
+    if(m.date===ds&&m.committeeId===committeeId&&norm(m.phone)===p&&m.status!=='rejected') return true;
+  if(admin)
+    return S.requests.some(r=>r.date===ds&&r.committeeId===committeeId
+      &&norm(r.phone)===p&&r.status!=='rejected');
+  return false;
+}
+
 function closeFullSlot(ds,s){
   if(seatsLeft(ds,s)>0)return;
   S.requests.forEach(r=>{
     if(r.status==='pending'&&r.officeId===S.active&&r.date===ds&&r.slotId===s.id){
       r.status='rejected';r.adminNote=r.adminNote||'الشفت اكتمل عدده';
     }
+  });
+}
+
+/* ---------- تعديل الطلب وهو لسه مستني ---------- */
+function openMyRequest(id,s,d){
+  const m=myReqs.get(id);
+  if(!m) return;
+  const live=S.requests.find(r=>r.id===id);
+  const c=comm(m.committeeId);
+
+  /* اتقبل خلاص → التعديل يقف تمامًا */
+  if(live&&live.status==='approved'){
+    m.status='approved';
+    openSheet(`<h2>${esc(c?.name||'')}</h2>
+      <p class="sub">${DAYNAMES[d.getDay()]} ${fullFmt.format(d)} · ${slotLabel(s)}</p>
+      <p style="margin:0 0 12px">طلبك اتقبل ✓</p>
+      <p class="sub">الحجوزات المقبولة مبقاش ينفع تتعدّل ولا تتلغي من هنا.
+      لو محتاج تغيير، كلّم المسؤول.</p>
+      <div class="acts"><button class="btn ghost" id="m_ok">تمام</button></div>`,
+      ()=>{$('#m_ok').onclick=closeSheet});
+    return;
+  }
+  if(live&&live.status==='rejected'){ myReqs.delete(id); toast('الطلب ده اترفض'); render(); return; }
+
+  openSheet(`<h2>طلبك — ${esc(c?.name||'')}</h2>
+    <p class="sub">${DAYNAMES[d.getDay()]} ${fullFmt.format(d)} · ${slotLabel(s)}</p>
+    <p class="sub">لسه مستني رد المسؤول، فتقدر تعدّله دلوقتي.</p>
+    <div class="field"><label for="m_person">اسمك</label>
+      <input class="inp" id="m_person" value="${esc(m.person||'')}"></div>
+    <div class="field"><label for="m_phone">رقم الموبايل</label>
+      <input class="inp" id="m_phone" type="tel" inputmode="tel" value="${esc(m.phone||'')}"></div>
+    <div class="field"><label for="m_people">عدد الأفراد</label>
+      <input class="inp" id="m_people" type="number" min="1" value="${m.people||''}"></div>
+    <div class="field"><label for="m_note">ملاحظة</label>
+      <input class="inp" id="m_note" value="${esc(m.note||'')}"></div>
+    <div class="acts">
+      <button class="btn del" id="m_del">الغي الطلب</button>
+      <button class="btn ghost" id="m_cancel">إلغاء</button>
+      <button class="btn primary" id="m_save">احفظ</button>
+    </div>`,()=>{
+    $('#m_cancel').onclick=closeSheet;
+    $('#m_save').onclick=async()=>{
+      const person=$('#m_person').value.trim();
+      const phone=$('#m_phone').value.replace(/\s/g,'');
+      const people=parseInt($('#m_people').value,10);
+      if(!person){toast('اكتب اسمك');return}
+      if(phone.replace(/\D/g,'').length<8){toast('اكتب رقم موبايل صحيح');return}
+      if(!people||people<1){toast('اكتب عدد الأفراد');return}
+      $('#m_save').textContent='لحظة…';
+      try{
+        await rpc('edit_pending_request',{p_id:id,p_phone:m.phone,p_person:person,
+          p_new_phone:phone,p_people:people,p_note:$('#m_note').value.trim()});
+        Object.assign(m,{person,phone,people,note:$('#m_note').value.trim()});
+        closeSheet(); await load(); render(); toast('طلبك اتعدّل');
+      }catch(e){
+        $('#m_save').textContent='احفظ';
+        toast(dbMessage(e));
+      }
+    };
+    $('#m_del').onclick=()=>ask('هتلغي طلبك.',async()=>{
+      try{
+        await rpc('cancel_pending_request',{p_id:id,p_phone:m.phone});
+        myReqs.delete(id); closeSheet(); await load(); render(); toast('الطلب اتلغى');
+      }catch(e){ toast(dbMessage(e)); }
+    },'أيوه، الغي');
   });
 }
 
@@ -925,7 +1068,7 @@ function openApproved(r,s,d){
     openSheet(`<h2>${esc(c?.name||'')}</h2>
       <p class="sub">${DAYNAMES[d.getDay()]} ${fullFmt.format(d)} · ${slotLabel(s)}</p>
       <p style="margin:0 0 12px">${esc(r.person||'')} · ${r.people||'?'} فرد</p>
-      <p class="sub">المكان ده متحجز. كلّم المسؤول لو محتاج تغييره.</p>
+      <p class="sub">${myReqs.has(r.id)?'طلبك اتقبل — والحجوزات المقبولة مبقاش ينفع تتعدّل. كلّم المسؤول لو محتاج تغيير.':'المكان ده متحجز. كلّم المسؤول لو محتاج تغييره.'}</p>
       <div class="acts"><button class="btn ghost" id="b_ok">تمام</button></div>`,
       ()=>{$('#b_ok').onclick=closeSheet});
     return;
@@ -1129,10 +1272,7 @@ function openCommittees(){
   const rows=S.committees.map((c,i)=>{
     const n=S.requests.filter(r=>r.committeeId===c.id&&r.status==='approved').length;
     return `<div class="crow" data-id="${c.id}">
-      <span class="ord">
-        <button data-act="up" ${i===0?'disabled':''} title="فوق">▲</button>
-        <button data-act="down" ${i===last?'disabled':''} title="تحت">▼</button>
-      </span>
+      <span class="grip" title="اسحب علشان ترتّب">⣿</span>
       <button class="dotbtn" data-act="color" style="background:${c.color}" title="غيّر اللون"></button>
       <input class="nmin" data-name value="${esc(c.name)}" aria-label="اسم اللجنة">
       <span class="n">${n}</span>
@@ -1141,8 +1281,8 @@ function openCommittees(){
   }).join('');
   openSheet(`
     <h2>اللجان</h2>
-    <p class="sub">الترتيب هنا هو نفس ترتيبهم قدام اللجان وهي بتختار. اضغط على الاسم علشان تصلّحه.</p>
-    ${rows||'<p class="sub">لسه مفيش لجان.</p>'}
+    <p class="sub">اسحب من علامة ⣿ علشان ترتّبهم. الترتيب ده هو نفسه اللي هيظهر قدام اللجان. واضغط على الاسم علشان تصلّحه.</p>
+    <div id="c_list">${rows||'<p class="sub">لسه مفيش لجان.</p>'}</div>
     <div class="addline"><input class="inp" id="c_new" placeholder="اسم لجنة جديدة">
       <button class="btn primary" id="c_add">أضف</button></div>
     <div class="acts"><button class="btn ghost" id="c_close">تمام</button></div>`,()=>{
@@ -1169,18 +1309,15 @@ function openCommittees(){
       inp.addEventListener('keydown',e=>{if(e.key==='Enter')inp.blur()});
     });
 
-    /* reorder / colour / delete */
+    wireCommitteeDrag();
+
+    /* colour / delete */
     $('#sheet').querySelectorAll('.crow [data-act]').forEach(btn=>{
       btn.onclick=()=>{
         const id=btn.closest('.crow').dataset.id;
         const i=S.committees.findIndex(x=>x.id===id), c=S.committees[i];
         const act=btn.dataset.act;
-        if(act==='up'||act==='down'){
-          const j=act==='up'?i-1:i+1;
-          if(j<0||j>=S.committees.length)return;
-          [S.committees[i],S.committees[j]]=[S.committees[j],S.committees[i]];
-          save();render();openCommittees();
-        }else if(act==='color'){
+        if(act==='color'){
           c.color=PALETTE[(PALETTE.indexOf(c.color)+1)%PALETTE.length];
           btn.style.background=c.color;save();render();
         }else{
@@ -1194,6 +1331,47 @@ function openCommittees(){
       };
     });
   });
+}
+
+/* ---------- سحب وإفلات لترتيب اللجان ---------- */
+function wireCommitteeDrag(){
+  const list=$('#c_list'); if(!list) return;
+  list.querySelectorAll('.grip').forEach(grip=>{
+    grip.onpointerdown=e=>{
+      e.preventDefault();
+      const row=grip.closest('.crow'); if(!row) return;
+      try{ grip.setPointerCapture(e.pointerId); }catch(_){}
+      row.classList.add('drag');
+
+      const move=ev=>{
+        const y=ev.clientY;
+        for(const other of list.querySelectorAll('.crow')){
+          if(other===row) continue;
+          const r=other.getBoundingClientRect();
+          if(y>=r.top&&y<=r.bottom){
+            list.insertBefore(row, y>r.top+r.height/2 ? other.nextSibling : other);
+            break;
+          }
+        }
+      };
+      const done=()=>{
+        grip.onpointermove=null; grip.onpointerup=null; grip.onpointercancel=null;
+        row.classList.remove('drag');
+        try{ grip.releasePointerCapture(e.pointerId); }catch(_){}
+        commitCommitteeOrder();
+      };
+      grip.onpointermove=move; grip.onpointerup=done; grip.onpointercancel=done;
+    };
+  });
+}
+function commitCommitteeOrder(){
+  const list=$('#c_list'); if(!list) return;
+  const ids=[...list.querySelectorAll('.crow')].map(r=>r.dataset.id);
+  const next=ids.map(id=>S.committees.find(c=>c.id===id)).filter(Boolean);
+  if(next.length!==S.committees.length) return;
+  if(next.every((c,i)=>c===S.committees[i])) return;   /* مفيش تغيير */
+  S.committees=next;
+  save();render();toast('الترتيب اتحفظ');
 }
 
 /* ---------- offices ---------- */
